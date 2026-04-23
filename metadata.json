@@ -1,0 +1,9 @@
+{
+  "name": "Kissan GPT - Brinjal & Grapes Specialist",
+  "description": "AI-powered agricultural assistant specializing in disease detection and treatment for Brinjal and Grapes.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}
