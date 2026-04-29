@@ -71,25 +71,24 @@ export const getLiveContextData = async (
       ? `Location: "${locationInput}"` 
       : `Lat: ${locationInput.lat}, Long: ${locationInput.long}`;
     
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `${locationPrompt}
-      Find:
-      1. Location Name (Village/City, District).
-      2. Current temp and weather condition.
-      3. Rain forecast (48h).
-      4. Typical Soil Type for this region.
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `${locationPrompt}
+        Find typical weather and soil data for this location:
+        1. Location name (Village/City, District)
+        2. Typical temperature and weather patterns
+        3. General rain forecast pattern
+        4. Typical soil type for region
 
-      Return JSON:
-      {
-        "weather": { "temp": number, "condition": "string", "rainForecast": "string", "location": "string" },
-        "soil": { "type": "string", "nitrogen": "Low"|"Medium"|"High", "moisture": "string" }
-      }`,
-      config: {
-        tools: [{ googleSearch: {} }],
-        temperature: 0.1
-      }
-    });
+        Return ONLY valid JSON (no markdown):
+        {"weather": {"temp": 28, "condition": "Partly Cloudy", "rainForecast": "Light rain expected", "location": "City, District"}, "soil": {"type": "Black Soil", "nitrogen": "Medium", "moisture": "Moderate"}}`,
+        config: {
+          temperature: 0.3
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+    ]);
 
     const data = extractJSON(response.text);
     return data as AppContextData;
@@ -189,18 +188,27 @@ export const sendMessageToGemini = async (
     }
     parts.push({ text: prompt });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: { role: 'user', parts: parts },
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.4,
-      },
-    });
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: { role: 'user', parts: parts },
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.4,
+        },
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 15000))
+    ]);
 
     return response.text || "I could not generate a response.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Error connecting to Kissan GPT.";
+    if ((error as any)?.message?.includes('API_KEY')) {
+      return "API Key configuration error.";
+    }
+    if ((error as any)?.message?.includes('timeout')) {
+      return "Request took too long. Please try again.";
+    }
+    return "Unable to connect. Please try again.";
   }
 };
