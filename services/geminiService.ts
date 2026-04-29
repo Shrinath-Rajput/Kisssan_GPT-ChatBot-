@@ -62,7 +62,7 @@ const extractJSON = (text: string): any => {
 export const getLiveContextData = async (
   locationInput: { lat: number; long: number } | string
 ): Promise<AppContextData | null> => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return null;
 
   const ai = new GoogleGenAI({ apiKey });
@@ -104,7 +104,7 @@ export const analyzeCropHealth = async (
   language: Language,
   contextData: AppContextData
 ): Promise<DiseaseResult | string> => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return "API Key missing";
 
   const ai = new GoogleGenAI({ apiKey });
