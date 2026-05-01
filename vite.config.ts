@@ -12,5 +12,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
     }
+  },
+  define: {
+    // Ensure environment variables are properly defined
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || ''),
   }
 });
