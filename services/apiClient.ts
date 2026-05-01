@@ -3,15 +3,35 @@
  * Communicates with backend proxy instead of Gemini API directly
  */
 
-// Get backend URL from environment or use localhost
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Smart backend URL detection for different environments
+function getBackendURL(): string {
+  // 1. If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
 
-// Log backend URL for debugging (remove in production)
+  // 2. If running on Railway, use the Railway backend URL
+  // Environment variable set in Railway: RAILWAY_BACKEND_URL
+  if (import.meta.env.VITE_RAILWAY_BACKEND_URL) {
+    return import.meta.env.VITE_RAILWAY_BACKEND_URL;
+  }
+
+  // 3. If on same Railway domain, construct backend URL
+  if (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')) {
+    const backendUrl = `${window.location.protocol}//backend-prod.up.railway.app`;
+    console.log('🚂 Detected Railway deployment, using backend:', backendUrl);
+    return backendUrl;
+  }
+
+  // 4. Default to localhost for development
+  return 'http://localhost:5000';
+}
+
+const BACKEND_URL = getBackendURL();
+
+// Log backend URL for debugging
 if (typeof window !== 'undefined') {
   console.log('🔗 Backend API URL:', BACKEND_URL);
-  if (!import.meta.env.VITE_API_URL) {
-    console.warn('⚠️ VITE_API_URL not set! Using default:', BACKEND_URL);
-  }
 }
 
 interface ApiResponse<T> {
