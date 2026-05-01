@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const SYSTEM_INSTRUCTION_BASE = `
 You are Kissan GPT, an AI specialist for Indian farmers, specifically focusing on Brinjal (Eggplant) and Grapes.
@@ -70,7 +70,8 @@ const validateApiKey = () => {
 export const sendChatMessage = async (prompt, imageBase64, language, contextData) => {
   try {
     const apiKey = validateApiKey();
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const systemInstruction = getSystemInstruction(language, contextData);
 
     console.log(`🗣️ Chat Service Called - Language: ${language || 'English'}`);
@@ -87,13 +88,12 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
     parts.push({ text: prompt });
 
     const response = await Promise.race([
-      ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: { role: 'user', parts: parts },
-        config: {
-          systemInstruction: systemInstruction,
+      model.generateContent({
+        contents: [{ role: 'user', parts: parts }],
+        generationConfig: {
           temperature: 0.4,
         },
+        systemInstruction: systemInstruction,
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout after 15s')), 15000))
     ]);
@@ -114,7 +114,8 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
 export const analyzeCropHealthService = async (imageBase64, language, contextData) => {
   try {
     const apiKey = validateApiKey();
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     const match = imageBase64.match(/^data:(.+);base64,(.+)$/);
     if (!match) {
@@ -126,49 +127,18 @@ export const analyzeCropHealthService = async (imageBase64, language, contextDat
 
     const systemInstruction = getSystemInstruction(language, contextData);
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
+    const response = await model.generateContent({
+      contents: [{
         role: 'user',
         parts: [
           { inlineData: { mimeType: match[1], data: match[2] } },
-          { text: 'Analyze this crop image for diseases. Focus ONLY on Brinjal or Grapes. If it\'s not one of these, say so. Return a detailed JSON response.' }
+          { text: 'Analyze this crop image for diseases. Focus ONLY on Brinjal or Grapes. If it\'s not one of these, say so. Return a detailed JSON response with keys: crop, diseaseName, confidence, cause, symptoms, treatmentPlan (with immediate, organic, chemical), and recommendations (with fertilizers, warnings).' }
         ]
+      }],
+      generationConfig: {
+        temperature: 0.4,
       },
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            crop: { type: Type.STRING, enum: ['Brinjal', 'Grapes'] },
-            diseaseName: { type: Type.STRING },
-            confidence: { type: Type.NUMBER },
-            cause: { type: Type.STRING },
-            symptoms: { type: Type.ARRAY, items: { type: Type.STRING } },
-            treatmentPlan: {
-              type: Type.OBJECT,
-              properties: {
-                immediate: { type: Type.ARRAY, items: { type: Type.STRING } },
-                organic: { type: Type.ARRAY, items: { type: Type.STRING } },
-                chemical: { type: Type.ARRAY, items: { type: Type.STRING } }
-              }
-            },
-            recommendations: {
-              type: Type.OBJECT,
-              properties: {
-                fertilizers: { type: Type.ARRAY, items: { type: Type.STRING } },
-                fungicides: { type: Type.ARRAY, items: { type: Type.STRING } },
-                insecticides: { type: Type.ARRAY, items: { type: Type.STRING } },
-                dosage: { type: Type.STRING },
-                applicationMethod: { type: Type.STRING },
-                frequency: { type: Type.STRING }
-              }
-            },
-            preventionTips: { type: Type.ARRAY, items: { type: Type.STRING } }
-          }
-        }
-      }
+      systemInstruction: systemInstruction,
     });
 
     console.log(`✅ Crop analysis completed successfully in ${language || 'English'}`);
