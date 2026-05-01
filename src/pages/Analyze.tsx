@@ -13,6 +13,7 @@ export const Analyze: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (file: File) => {
@@ -45,12 +46,14 @@ export const Analyze: React.FC = () => {
     if (!selectedImage) return;
 
     setIsAnalyzing(true);
+    setError(null);
     try {
       const result = await analyzeCropHealth(selectedImage, selectedLanguage, contextData);
       setAnalysisResult(result);
       setTimeout(() => navigate('/result'), 500);
     } catch (error) {
       console.error('Analysis error:', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -198,6 +201,13 @@ export const Analyze: React.FC = () => {
                 </li>
               </ul>
             </Card>
+
+            {/* Error Message Display */}
+            {error && (
+              <Card className="bg-red-50 border-red-200">
+                <p className="text-sm text-red-900 whitespace-pre-wrap">{error}</p>
+              </Card>
+            )}
 
             {/* Analyze Button */}
             <Button

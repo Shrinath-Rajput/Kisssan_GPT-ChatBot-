@@ -62,6 +62,11 @@ export const analyzeCropHealth = async (
     console.error("❌ Backend analysis error:", error);
     const errorMsg = (error as any)?.message || String(error);
     
+    // Backend connectivity error - provide clear fix instructions
+    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Network')) {
+      return `❌ Cannot connect to backend server\n\n🔧 FIX THIS:\n1. Go to Railway Dashboard (railway.app)\n2. Click your FRONTEND service\n3. Go to Variables tab\n4. Add: VITE_API_URL = https://your-backend-url.up.railway.app\n5. Copy backend URL from your BACKEND service in Railway\n6. Save and wait 2-3 minutes for redeploy\n\nFor development: Make sure backend is running with 'npm start' in backend/ folder`;
+    }
+    
     if (errorMsg.includes('429')) {
       return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Your request could not be processed. Please wait a few moments and try again.";
     }
@@ -93,6 +98,11 @@ export const sendMessageToGemini = async (
   } catch (error) {
     console.error("❌ Backend chat error:", error);
     const errorMsg = (error as any)?.message || String(error);
+    
+    // Backend connectivity error - provide clear fix instructions
+    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Network')) {
+      return `❌ Cannot connect to backend server\n\n🔧 FIX THIS:\n1. Go to Railway Dashboard (railway.app)\n2. Click your FRONTEND service\n3. Go to Variables tab\n4. Add: VITE_API_URL = https://your-backend-url.up.railway.app\n5. Copy backend URL from your BACKEND service in Railway\n6. Save and wait 2-3 minutes for redeploy\n\nFor development: Make sure backend is running with 'npm start' in backend/ folder`;
+    }
     
     if (errorMsg.includes('429')) {
       return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Please wait a few moments and try again.";
