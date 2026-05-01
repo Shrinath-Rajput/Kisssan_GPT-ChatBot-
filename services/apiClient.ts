@@ -10,28 +10,22 @@ function getBackendURL(): string {
     return import.meta.env.VITE_API_URL;
   }
 
-  // 2. If running on Railway, use the Railway backend URL
-  // Environment variable set in Railway: RAILWAY_BACKEND_URL
-  if (import.meta.env.VITE_RAILWAY_BACKEND_URL) {
-    return import.meta.env.VITE_RAILWAY_BACKEND_URL;
-  }
-
-  // 3. If on same Railway domain, construct backend URL
-  if (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')) {
-    const backendUrl = `${window.location.protocol}//backend-prod.up.railway.app`;
-    console.log('🚂 Detected Railway deployment, using backend:', backendUrl);
-    return backendUrl;
-  }
-
-  // 4. Default to localhost for development
-  return 'http://localhost:5000';
+  // 2. Default to production backend for Railway, or localhost for development
+  // In production, Railway will set VITE_API_URL environment variable
+  // If not set, default to production backend URL
+  return 'https://radiant-renewal-production.up.railway.app';
 }
 
 const BACKEND_URL = getBackendURL();
 
 // Log backend URL for debugging
 if (typeof window !== 'undefined') {
-  console.log('🔗 Backend API URL:', BACKEND_URL);
+  console.log('✅ Backend API URL:', BACKEND_URL);
+  if (BACKEND_URL.includes('railway.app')) {
+    console.log('🚀 Production backend connected');
+  } else if (BACKEND_URL.includes('localhost')) {
+    console.log('🔧 Development backend connected');
+  }
 }
 
 interface ApiResponse<T> {
