@@ -1,0 +1,5 @@
+Last Deployment: 2026-05-01T08:45:00Z
+Force Rebuild: YES
+Version: 1.0.0-production
+API: Gemini 2.5 Flash
+Status: Fixed and redeploying
