@@ -16,7 +16,7 @@ export const parseError = (error) => {
     return {
       code: ERROR_CODES.RATE_LIMIT,
       statusCode: 429,
-      message: '⚠️ API quota exceeded. Server is busy. Please try again in a few moments.',
+      message: '⚠️ API quota exceeded. The service is handling many requests. Retrying automatically... Please wait.',
       retriable: true
     };
   }

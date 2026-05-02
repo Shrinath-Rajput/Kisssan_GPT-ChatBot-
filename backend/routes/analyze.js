@@ -35,10 +35,11 @@ router.post('/', async (req, res) => {
     console.log('🔍 Analysis request received for crop health');
 
     // Call Gemini analysis with retry logic
+    // Increase retries for rate limiting issues
     const response = await retryAsync(
       () => analyzeCropHealthService(image, language, contextData),
-      2,  // max retries
-      1000 // initial delay
+      4,  // max retries (increased for rate limiting)
+      2000 // initial delay (increased)
     );
 
     console.log('✅ Analysis response sent successfully');
