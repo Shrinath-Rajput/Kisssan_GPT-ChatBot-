@@ -17,18 +17,22 @@ COPY src ./src
 COPY components ./components
 COPY services ./services
 
-# Build frontend
+# Set build-time environment variables (can be overridden during docker build)
+# These are embedded in the built frontend
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build frontend with environment variables
 RUN npm run build
 
 # Expose port
 EXPOSE 3000
 
-# Set environment variables
+# Set runtime environment variables for proxy server
 ENV PORT=3000
 # Backend configuration - can be set via Railway variables
 # For local: BACKEND_HOST=localhost BACKEND_PORT=8080
 # For production: VITE_API_URL=https://backend-service.up.railway.app
-ENV VITE_API_URL=""
 ENV BACKEND_HOST="localhost"
 ENV BACKEND_PORT="8080"
 

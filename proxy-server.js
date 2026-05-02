@@ -71,7 +71,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Proxy server listening on port ${PORT}`);
   console.log(`📡 Frontend: http://0.0.0.0:${PORT}`);
-  console.log(`🔀 API requests will be proxied to ${BACKEND_HOST}:${BACKEND_PORT}`);
+  console.log(`🔀 API requests will be proxied to ${BACKEND_URL}`);
 });
 
 export default app;

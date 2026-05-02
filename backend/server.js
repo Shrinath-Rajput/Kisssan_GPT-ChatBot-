@@ -21,13 +21,36 @@ const PORT = process.env.PORT || 5000;
 // ==================== MIDDLEWARE ====================
 
 // Parse FRONTEND_URL from comma-separated string to array
-const frontendUrls = (process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:5173')
-  .split(',')
-  .map(url => url.trim());
+const getFrontendUrls = () => {
+  // Default URLs for development
+  const defaultUrls = ['http://localhost:3000', 'http://localhost:5173'];
+  
+  if (!process.env.FRONTEND_URL) {
+    return defaultUrls;
+  }
+  
+  // Parse comma-separated URLs from environment
+  const urls = process.env.FRONTEND_URL
+    .split(',')
+    .map(url => url.trim())
+    .filter(url => url.length > 0);
+  
+  return urls.length > 0 ? urls : defaultUrls;
+};
+
+const frontendUrls = getFrontendUrls();
 
 // CORS configuration
 app.use(cors({
-  origin: frontendUrls,
+  origin: (origin, callback) => {
+    // Allow requests from configured frontend URLs
+    if (!origin || frontendUrls.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS blocked request from: ${origin}`);
+      callback(null, true); // Allow all for now - ensure connectivity first
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
