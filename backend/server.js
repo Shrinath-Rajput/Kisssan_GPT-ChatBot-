@@ -97,10 +97,39 @@ app.use((err, req, res, next) => {
 
 // ==================== SERVER START ====================
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(`📡 CORS enabled for: ${process.env.FRONTEND_URL || 'default origins'}`);
+// Log startup information
+const startupLog = () => {
+  console.log('\n========== KISSAN GPT BACKEND STARTUP ==========');
+  console.log(`🚀 Server starting on port: ${PORT}`);
   console.log(`⚙️  Node environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📡 CORS origins: ${frontendUrls.join(', ')}`);
+  
+  // Check API key
+  if (process.env.GEMINI_API_KEY) {
+    console.log('✅ GEMINI_API_KEY is configured');
+  } else {
+    console.warn('⚠️  WARNING: GEMINI_API_KEY is NOT configured!');
+    console.warn('   - Set it in Railway Variables tab');
+    console.warn('   - Without it, /api/analyze and /api/chat will fail');
+  }
+  
+  // Check if running on Railway
+  if (process.env.RAILWAY_ENVIRONMENT_NAME) {
+    console.log(`🚄 Running on Railway: ${process.env.RAILWAY_ENVIRONMENT_NAME}`);
+    console.log(`📍 Railway service: ${process.env.RAILWAY_SERVICE_NAME || 'unknown'}`);
+  }
+  
+  console.log('\n✅ Backend is ready to receive requests');
+  console.log(`📚 API Endpoints:`);
+  console.log(`   - GET  /health`);
+  console.log(`   - POST /api/chat`);
+  console.log(`   - POST /api/analyze`);
+  console.log(`   - POST /api/location`);
+  console.log('================================================\n');
+};
+
+app.listen(PORT, '0.0.0.0', () => {
+  startupLog();
 });
 
 export default app;
