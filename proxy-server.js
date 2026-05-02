@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { createProxyMiddleware } from 'express-http-proxy';
+import httpProxy from 'express-http-proxy';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,8 +35,7 @@ console.log(`📍 Frontend Port: ${PORT}`);
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 
 // Proxy /api/* requests to backend
-app.use('/api', createProxyMiddleware({
-  target: BACKEND_URL,
+app.use('/api', httpProxy(BACKEND_URL, {
   changeOrigin: true,
   pathRewrite: {
     '^': '/api', // Add /api prefix back since express stripped it
