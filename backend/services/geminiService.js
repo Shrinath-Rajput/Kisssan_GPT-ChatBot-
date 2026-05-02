@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { geminiRequestQueue } from '../utils/requestQueue.js';
 
 const SYSTEM_INSTRUCTION_BASE = `
 You are Kissan GPT, an AI specialist for Indian farmers, specifically focusing on Brinjal (Eggplant) and Grapes.
@@ -87,16 +88,18 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
     }
     parts.push({ text: prompt });
 
-    const response = await Promise.race([
-      model.generateContent({
-        contents: [{ role: 'user', parts: parts }],
-        generationConfig: {
-          temperature: 0.4,
-        },
-        systemInstruction: systemInstruction,
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout after 30s')), 30000))
-    ]);
+    const response = await geminiRequestQueue.execute(async () => {
+      return await Promise.race([
+        model.generateContent({
+          contents: [{ role: 'user', parts: parts }],
+          generationConfig: {
+            temperature: 0.4,
+          },
+          systemInstruction: systemInstruction,
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout after 30s')), 30000))
+      ]);
+    });
 
     console.log(`✅ Chat message processed successfully in ${language || 'English'}`);
     return {
@@ -127,22 +130,24 @@ export const analyzeCropHealthService = async (imageBase64, language, contextDat
 
     const systemInstruction = getSystemInstruction(language, contextData);
 
-    const response = await Promise.race([
-      model.generateContent({
-        contents: [{
-          role: 'user',
-          parts: [
-            { inlineData: { mimeType: match[1], data: match[2] } },
-            { text: 'Analyze this crop image for diseases. Focus ONLY on Brinjal or Grapes. If it\'s not one of these, say so. Return a detailed JSON response with keys: crop, diseaseName, confidence, cause, symptoms, treatmentPlan (with immediate, organic, chemical), and recommendations (with fertilizers, warnings).' }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-        },
-        systemInstruction: systemInstruction,
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout after 30s')), 30000))
-    ]);
+    const response = await geminiRequestQueue.execute(async () => {
+      return await Promise.race([
+        model.generateContent({
+          contents: [{
+            role: 'user',
+            parts: [
+              { inlineData: { mimeType: match[1], data: match[2] } },
+              { text: 'Analyze this crop image for diseases. Focus ONLY on Brinjal or Grapes. If it\'s not one of these, say so. Return a detailed JSON response with keys: crop, diseaseName, confidence, cause, symptoms, treatmentPlan (with immediate, organic, chemical), and recommendations (with fertilizers, warnings).' }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.4,
+          },
+          systemInstruction: systemInstruction,
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout after 30s')), 30000))
+      ]);
+    });
 
     console.log(`✅ Crop analysis completed successfully in ${language || 'English'}`);
     return {

@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { geminiRequestQueue } from './utils/requestQueue.js';
 
 // Load environment variables
 dotenv.config();
@@ -62,11 +64,33 @@ console.log('✅ CORS enabled for:', frontendUrls);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Rate limiting for API endpoints to prevent overwhelming Gemini API
+const analyzeRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 5, // Max 5 requests per minute per IP
+  message: '⚠️ Too many analysis requests. Please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const chatRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 10, // Max 10 requests per minute per IP
+  message: '⚠️ Too many chat requests. Please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+console.log('✅ Rate limiting configured for API endpoints');
+
 // ==================== ROUTES ====================
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'Backend server is running ✅' });
+  res.json({ 
+    status: 'Backend server is running ✅',
+    queue: geminiRequestQueue.getStatus()
+  });
 });
 
 // Root endpoint for testing
@@ -79,8 +103,8 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
-app.use('/api/chat', chatRoutes);
-app.use('/api/analyze', analyzeRoutes);
+app.use('/api/chat', chatRateLimiter, chatRoutes);
+app.use('/api/analyze', analyzeRateLimiter, analyzeRoutes);
 app.use('/api/location', locationRoutes);
 
 // ==================== ERROR HANDLING ====================
