@@ -3,16 +3,16 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy backend package files
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy backend code
-COPY backend/server.js ./
-COPY backend/routes ./routes
-COPY backend/services ./services
-COPY backend/utils ./utils
+COPY server.js ./
+COPY routes ./routes
+COPY services ./services
+COPY utils ./utils
 
 # Expose port
 EXPOSE 8080
