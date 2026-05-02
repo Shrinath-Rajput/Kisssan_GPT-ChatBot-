@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { Home } from './src/pages/Home';
-import { Weather } from './src/pages/Weather';
-import { Analyze } from './src/pages/Analyze';
-import { Result } from './src/pages/Result';
-import { Chat } from './src/pages/Chat';
-import { AppProvider, useAppContext } from './src/context/AppContext';
+import { Navbar } from '../../components/Navbar';
+import { Home } from './Home';
+import { Weather } from './Weather';
+import { Analyze } from './Analyze';
+import { Result } from './Result';
+import { Chat } from './Chat';
+import { AppProvider, useAppContext } from '../context/AppContext';
 
 const AppContent: React.FC = () => {
   const { selectedLanguage, setSelectedLanguage } = useAppContext();
