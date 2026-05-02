@@ -12,6 +12,7 @@ RUN npm ci
 COPY vite.config.ts ./
 COPY tsconfig.json ./
 COPY index.html ./
+COPY types.ts ./
 COPY proxy-server.js ./
 COPY src ./src
 COPY components ./components
