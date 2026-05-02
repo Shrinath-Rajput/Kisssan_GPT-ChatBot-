@@ -5,7 +5,7 @@
 
 // Smart backend URL detection for different environments
 function getBackendURL(): string {
-  // 1. If VITE_API_URL is explicitly set, use it
+  // 1. If VITE_API_URL is explicitly set, use it (for separate backend services)
   if (import.meta.env.VITE_API_URL) {
     const url = import.meta.env.VITE_API_URL.trim();
     if (url) {
@@ -14,32 +14,34 @@ function getBackendURL(): string {
     }
   }
 
-  // 2. Check if running on Railway (production)
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-    
-    // If on Railway frontend domain
-    if (hostname.includes('railway.app')) {
-      console.warn('⚠️ Running on Railway, but VITE_API_URL not configured');
-      console.warn('📝 Critical: Set VITE_API_URL environment variable for your Railway frontend service');
-      console.warn(`🌐 Frontend domain: ${protocol}//${hostname}`);
-      console.error('❌ API calls will fail until VITE_API_URL is set correctly');
-    }
-  }
-
-  // 3. For development, use localhost
+  // 2. For development, use localhost with proxy
   if (import.meta.env.DEV) {
-    console.log('🔧 Development mode - using http://localhost:5000');
-    return 'http://localhost:5000';
+    console.log('🔧 Development mode - using http://localhost:3000 (via proxy)');
+    return 'http://localhost:3000';
   }
 
-  // Fallback to localhost
-  console.warn('📍 No backend URL configured, using localhost fallback');
-  return 'http://localhost:5000';
+  // 3. On production, use same origin (works with reverse proxy)
+  // Proxy server routes /api/* to backend on port 8080
+  if (typeof window !== 'undefined') {
+    console.log('🔧 Production mode - using same origin for proxy routing');
+    return ''; // Empty string means use relative URLs
+  }
+
+  // Fallback to same origin
+  console.warn('⚠️ Fallback to same origin');
+  return '';
 }
 
 const BACKEND_URL = getBackendURL();
+
+// Helper to build API URLs
+function getAPIUrl(path: string): string {
+  if (BACKEND_URL) {
+    return `${BACKEND_URL}${path}`;
+  }
+  // For relative URLs in production
+  return path;
+}
 
 // Log backend URL for debugging
 if (typeof window !== 'undefined') {
@@ -148,7 +150,7 @@ export async function sendChatToBackend(
 ): Promise<string> {
   return retryFetch(
     async () => {
-      const response = await fetch(`${BACKEND_URL}/api/chat`, {
+      const response = await fetch(getAPIUrl('/api/chat'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +200,7 @@ export async function analyzeCropViaBackend(
 ): Promise<any> {
   return retryFetch(
     async () => {
-      const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+      const response = await fetch(getAPIUrl('/api/analyze'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +243,7 @@ export async function getLocationDataViaBackend(
 ): Promise<any> {
   return retryFetch(
     async () => {
-      const response = await fetch(`${BACKEND_URL}/api/location`, {
+      const response = await fetch(getAPIUrl('/api/location'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +274,7 @@ export async function getLocationDataViaBackend(
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/health`, {
+    const response = await fetch(getAPIUrl('/health'), {
       method: 'GET'
     });
     return response.ok;

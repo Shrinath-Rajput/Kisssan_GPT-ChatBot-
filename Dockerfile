@@ -1,0 +1,32 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy application files
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY index.html ./
+COPY proxy-server.js ./
+COPY src ./src
+COPY components ./components
+COPY services ./services
+
+# Build frontend
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Set environment variables
+ENV PORT=3000
+ENV BACKEND_HOST=localhost
+ENV BACKEND_PORT=8080
+
+# Run proxy server
+CMD ["npm", "run", "proxy"]

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "proxy": "node proxy-server.js",
+    "start": "npm run build && npm run proxy"
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
@@ -15,7 +17,9 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.14.2"
+    "react-router-dom": "^7.14.2",
+    "express": "^4.18.2",
+    "express-http-proxy": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

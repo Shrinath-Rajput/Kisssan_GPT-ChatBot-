@@ -16,5 +16,9 @@ export default defineConfig({
   define: {
     // Ensure environment variables are properly defined
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || ''),
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
   }
 });
