@@ -34,7 +34,9 @@ export const CropHealthAnalyzer: React.FC<CropHealthAnalyzerProps> = ({ contextD
       const analysisResult = await analyzeCropHealth(selectedImage, language, contextData);
       setResult(analysisResult);
     } catch (error) {
-      setResult("An error occurred during analysis.");
+      const errorMsg = (error as any)?.message || String(error);
+      console.error('❌ Analysis error:', error);
+      setResult(`❌ Analysis failed: ${errorMsg}\n\nPlease check:\n1. GEMINI_API_KEY is set in Backend Variables\n2. Backend service is running\n3. VITE_API_URL is correct\n\nCheck browser console for more details.`);
     } finally {
       setIsAnalyzing(false);
     }

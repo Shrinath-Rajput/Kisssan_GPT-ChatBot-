@@ -71,8 +71,8 @@ export const analyzeCropHealth = async (
       return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Your request could not be processed. Please wait a few moments and try again.";
     }
     
-    if (errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED')) {
-      return "❌ Backend Error: API key not configured on server.\n\nPlease contact administrator to:\n1. Configure GEMINI_API_KEY in backend environment variables\n2. Restart the backend server\n3. Try again";
+    if (errorMsg.includes('API_KEY') || errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('not configured')) {
+      return "❌ Backend Configuration Error\n\n🔧 TO FIX THIS:\n1. Get your Google Generative AI API Key from: https://aistudio.google.com/app/apikey\n2. Go to Railway Dashboard (railway.app)\n3. Click your BACKEND service\n4. Click Variables tab\n5. Add: GEMINI_API_KEY = (paste your API key)\n6. Save and wait 2-3 minutes for redeploy\n7. Try again";
     }
     
     return `❌ Analysis failed: ${errorMsg}\n\nPlease check the browser console for details and try again.`;
@@ -108,8 +108,8 @@ export const sendMessageToGemini = async (
       return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Please wait a few moments and try again.";
     }
     
-    if (errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED')) {
-      return "❌ Backend Error: API key not configured on server.\n\nPlease contact administrator to configure GEMINI_API_KEY in backend environment variables.";
+    if (errorMsg.includes('API_KEY') || errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('not configured')) {
+      return "❌ Backend Configuration Error\n\n🔧 TO FIX THIS:\n1. Get your Google Generative AI API Key from: https://aistudio.google.com/app/apikey\n2. Go to Railway Dashboard (railway.app)\n3. Click your BACKEND service\n4. Click Variables tab\n5. Add: GEMINI_API_KEY = (paste your API key)\n6. Save and wait 2-3 minutes for redeploy\n7. Try again";
     }
     
     if (errorMsg.includes('timeout')) {

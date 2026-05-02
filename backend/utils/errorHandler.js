@@ -16,16 +16,16 @@ export const parseError = (error) => {
     return {
       code: ERROR_CODES.RATE_LIMIT,
       statusCode: 429,
-      message: 'API quota exceeded. Please try again later.',
+      message: '⚠️ API quota exceeded. Server is busy. Please try again in a few moments.',
       retriable: true
     };
   }
   
-  if (message.includes('API_KEY') || message.includes('UNAUTHENTICATED')) {
+  if (message.includes('API_KEY') || message.includes('UNAUTHENTICATED') || message.includes('not configured')) {
     return {
       code: ERROR_CODES.API_KEY_MISSING,
       statusCode: 500,
-      message: 'Backend API key is not configured',
+      message: '❌ BACKEND ERROR: GEMINI_API_KEY is not configured.\n\nTo fix: Go to Railway → Backend service → Variables tab → Add GEMINI_API_KEY with your actual Google AI API key.',
       retriable: false
     };
   }
@@ -34,7 +34,7 @@ export const parseError = (error) => {
     return {
       code: ERROR_CODES.TIMEOUT,
       statusCode: 504,
-      message: 'Request took too long. Please try again.',
+      message: '⏱️ Request took too long. Please try again.',
       retriable: true
     };
   }
@@ -43,7 +43,7 @@ export const parseError = (error) => {
     return {
       code: ERROR_CODES.INVALID_IMAGE,
       statusCode: 400,
-      message: 'Invalid image format',
+      message: 'Invalid image format. Please upload a valid image (JPG, PNG, etc.)',
       retriable: false
     };
   }
@@ -51,7 +51,7 @@ export const parseError = (error) => {
   return {
     code: ERROR_CODES.SERVER_ERROR,
     statusCode: 500,
-    message: 'An error occurred processing your request',
+    message: `❌ Error: ${message.substring(0, 100)}`,
     retriable: true
   };
 };
