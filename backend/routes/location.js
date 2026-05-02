@@ -1,6 +1,6 @@
 import express from 'express';
-import { getLocationContextData } from '../services/geminiService.js';
-import { parseError, formatResponse } from '../utils/errorHandler.js';
+import { getWeatherData, getSoilData } from '../services/weatherService.js';
+import { formatResponse } from '../utils/errorHandler.js';
 
 const router = express.Router();
 
@@ -28,21 +28,31 @@ router.post('/', async (req, res) => {
 
     console.log(`📍 Location data request:`, location);
 
-    // Call location service
-    const response = await getLocationContextData(location);
+    // Get location string
+    const locationString = typeof location === 'string' 
+      ? location 
+      : `Lat: ${location.lat}, Long: ${location.long}`;
+
+    // Call weather and soil services (no API quota consumed)
+    const weather = await getWeatherData(locationString);
+    const soil = await getSoilData(locationString);
+
+    const response = {
+      location: locationString,
+      weather: weather,
+      soil: soil,
+      timestamp: new Date().toISOString()
+    };
 
     console.log('✅ Location data sent successfully');
     res.json(formatResponse(true, response));
 
   } catch (error) {
     console.error('❌ Location route error:', error);
-    const parsedError = parseError(error);
-    
-    res.status(parsedError.statusCode).json(
+    res.status(500).json(
       formatResponse(false, null, {
-        code: parsedError.code,
-        message: parsedError.message,
-        retriable: parsedError.retriable
+        code: 'SERVER_ERROR',
+        message: 'Failed to get location data'
       })
     );
   }

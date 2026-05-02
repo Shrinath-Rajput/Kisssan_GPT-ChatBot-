@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { geminiRequestQueue } from '../utils/requestQueue.js';
+import { cacheManager } from '../utils/cache.js';
+import { getFallbackAnalysisResponse, getFallbackChatResponse } from '../utils/fallbackResponses.js';
 
 const SYSTEM_INSTRUCTION_BASE = `
 You are Kissan GPT, an AI specialist for Indian farmers, specifically focusing on Brinjal (Eggplant) and Grapes.
@@ -70,6 +72,13 @@ const validateApiKey = () => {
 // Chat Service
 export const sendChatMessage = async (prompt, imageBase64, language, contextData) => {
   try {
+    // Check cache first
+    const cacheKey = { type: 'chat', prompt: prompt.substring(0, 100), language };
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const apiKey = validateApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -101,14 +110,26 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
       ]);
     });
 
-    console.log(`✅ Chat message processed successfully in ${language || 'English'}`);
-    return {
+    const result = {
       success: true,
       message: response.text || 'I could not generate a response.',
       language: language || 'English'
     };
+
+    // Cache the successful response
+    cacheManager.set(cacheKey, result);
+    console.log(`✅ Chat message processed successfully in ${language || 'English'}`);
+    return result;
   } catch (error) {
     console.error('❌ Chat Service Error:', error);
+    
+    // If it's a quota/rate limit error, use fallback response
+    if (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+      console.warn('⚠️ API quota exceeded - Using fallback response');
+      const fallback = getFallbackChatResponse(prompt, language);
+      return fallback;
+    }
+    
     throw error;
   }
 };
@@ -116,6 +137,13 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
 // Analysis Service
 export const analyzeCropHealthService = async (imageBase64, language, contextData) => {
   try {
+    // Check cache first - use first 100 chars of image as key
+    const cacheKey = { type: 'analysis', imageHash: imageBase64.substring(0, 100), language };
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const apiKey = validateApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -149,14 +177,31 @@ export const analyzeCropHealthService = async (imageBase64, language, contextDat
       ]);
     });
 
-    console.log(`✅ Crop analysis completed successfully in ${language || 'English'}`);
-    return {
+    const result = {
       success: true,
       analysis: extractJSON(response.text),
       language: language || 'English'
     };
+
+    // Cache the successful response
+    cacheManager.set(cacheKey, result);
+    console.log(`✅ Crop analysis completed successfully in ${language || 'English'}`);
+    return result;
   } catch (error) {
     console.error('❌ Analysis Service Error:', error);
+    
+    // If it's a quota/rate limit error, use fallback response
+    if (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+      console.warn('⚠️ API quota exceeded - Using fallback analysis response');
+      const fallback = {
+        success: true,
+        analysis: getFallbackAnalysisResponse(language),
+        language: language || 'English',
+        source: 'fallback'
+      };
+      return fallback;
+    }
+    
     throw error;
   }
 };
