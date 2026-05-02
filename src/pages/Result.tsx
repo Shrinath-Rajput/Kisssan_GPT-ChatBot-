@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Beaker, Leaf, ShieldCheck, Activity, ArrowLeft } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Beaker, Leaf, ShieldCheck, Activity, ArrowLeft, ImageIcon } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { useAppContext } from '../context/AppContext';
@@ -9,6 +9,9 @@ import { DiseaseResult } from '../../types';
 export const Result: React.FC = () => {
   const navigate = useNavigate();
   const { analysisResult } = useAppContext();
+
+  // Debug logging
+  console.log('Result component loaded. analysisResult:', analysisResult);
 
   if (!analysisResult) {
     return (
@@ -29,7 +32,7 @@ export const Result: React.FC = () => {
   }
 
   const isStringResult = typeof analysisResult === 'string';
-  const result: DiseaseResult | null = !isStringResult ? analysisResult : null;
+  const result: DiseaseResult | null = !isStringResult ? (analysisResult as DiseaseResult) : null;
 
   if (isStringResult) {
     return (
@@ -60,7 +63,7 @@ export const Result: React.FC = () => {
               Chat with Expert
             </Button>
             <Button onClick={() => navigate('/analyze')} className="flex-1">
-              <Camera size={18} />
+              <ImageIcon size={18} />
               Analyze Another
             </Button>
           </div>
