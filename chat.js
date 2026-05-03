@@ -9,26 +9,56 @@ router.post("/", async (req, res) => {
     if (!message) {
       return res.json({
         success: false,
-        reply: "Please enter a message"
+        reply: "Please enter a question"
       });
     }
 
+    const apiKey = process.env.GEMINI_API_KEY;
+
     let reply = "";
 
-    const text = message.toLowerCase();
+    // ================= GEMINI CALL =================
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `You are an agriculture expert. Answer clearly and concisely.\n\nUser: ${message}`
+                  }
+                ]
+              }
+            ]
+          }),
+        }
+      );
 
-    // ✅ SIMPLE WORKING LOGIC (ALWAYS RESPONSE)
-    if (text.includes("grapes")) {
-      reply = "Grapes are small round fruits that grow in clusters on vines. They are used for eating, juice, and wine.";
-    } 
-    else if (text.includes("brinjal") || text.includes("eggplant")) {
-      reply = "Brinjal (eggplant) is a vegetable crop. It requires warm climate and regular watering.";
-    } 
-    else if (text.includes("disease")) {
-      reply = "Crop diseases are caused by fungi, bacteria, or viruses. Regular monitoring helps prevent damage.";
-    } 
-    else {
-      reply = `You said: "${message}". Farming tip: Maintain proper irrigation and soil health.`;
+      const data = await response.json();
+
+      console.log("🔥 GEMINI:", JSON.stringify(data));
+
+      if (
+        data?.candidates &&
+        data.candidates.length > 0 &&
+        data.candidates[0]?.content?.parts?.length > 0
+      ) {
+        reply = data.candidates[0].content.parts[0].text;
+      }
+
+    } catch (err) {
+      console.log("⚠️ Gemini failed, using fallback");
+    }
+
+    // ================= FALLBACK (IMPORTANT) =================
+    if (!reply || reply.trim() === "") {
+      reply = `Here’s a useful farming tip: Maintain proper irrigation, use balanced fertilizers, and monitor crops regularly. (Your query: "${message}")`;
     }
 
     return res.json({
