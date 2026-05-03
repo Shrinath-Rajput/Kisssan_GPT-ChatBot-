@@ -7,7 +7,7 @@ export const Analyze: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setAnalysisResult, contextData } = useAppContext();
+  const { setAnalysisResult, contextData, selectedLanguage } = useAppContext();
 
   const handleUpload = (e: any) => {
     const file = e.target.files[0];
@@ -27,7 +27,7 @@ export const Analyze: React.FC = () => {
 
     const base64 = image.split(",")[1];
 
-    const res = await analyzeCropHealth(base64, "English", contextData);
+    const res = await analyzeCropHealth(base64, selectedLanguage, contextData);
 
     setAnalysisResult(res);
     setLoading(false);
