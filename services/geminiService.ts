@@ -1,5 +1,9 @@
 import { AppContextData, Language } from "../types";
-import { analyzeCropViaBackend, getLocationDataViaBackend } from "./apiClient";
+import {
+  analyzeCropViaBackend,
+  getLocationDataViaBackend,
+  sendChatToBackend
+} from "./apiClient";
 
 
 // ================= LOCATION =================
@@ -51,8 +55,43 @@ export const analyzeCropHealth = async (
     return res;
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error("❌ Analyze error:", error);
     return getFallbackData();
+  }
+};
+
+
+// ================= CHAT =================
+export const sendMessageToGemini = async (
+  prompt: string,
+  imageBase64: string | undefined,
+  language: Language,
+  contextData: AppContextData
+): Promise<string> => {
+  try {
+    const res = await sendChatToBackend(
+      prompt,
+      imageBase64,
+      language,
+      contextData
+    );
+
+    return res || "No response";
+
+  } catch (error: any) {
+    console.error("❌ Chat error:", error);
+
+    const msg = error?.message || "";
+
+    if (msg.includes("Failed to fetch")) {
+      return "❌ Backend not reachable";
+    }
+
+    if (msg.includes("429")) {
+      return "⚠️ Server busy. Try later";
+    }
+
+    return "❌ Chat failed";
   }
 };
 
@@ -65,10 +104,10 @@ const getFallbackData = () => ({
   cause: "Fungal pathogen (Guignardia bidwellii)",
 
   symptoms: [
-    "Circular, reddish-brown spots on leaves",
-    "Yellow halo spots",
-    "Necrotic tissue",
-    "Lesions enlarge"
+    "Circular reddish-brown spots",
+    "Yellow halo",
+    "Dead tissue",
+    "Spots enlarge"
   ],
 
   treatment: {
@@ -91,13 +130,13 @@ const getFallbackData = () => ({
     fungicides: "Myclobutanil, Mancozeb, Pristine",
     dosage: "5-6ml per 10L",
     method: "Foliar spray",
-    frequency: "Every 7-14 days"
+    frequency: "7-14 days"
   },
 
   prevention: [
-    "Prune properly",
+    "Prune plants",
     "Remove debris",
-    "Avoid overhead irrigation",
+    "Avoid overhead watering",
     "Maintain hygiene"
   ]
 });
