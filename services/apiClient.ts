@@ -259,11 +259,16 @@ export async function getLocationDataViaBackend(
 
       const data: ApiResponse<any> = await response.json();
       
-      if (!data.data) {
+      if (!data.success || !data.data) {
         throw new Error(data.error?.message || 'Failed to get location data');
       }
 
-      return data.data.data;
+      // Extract the proper structure from response
+      const responseData = data.data;
+      return {
+        weather: responseData.weather,
+        soil: responseData.soil
+      };
     },
     { maxRetries: 1, delayMs: 500 }
   );
