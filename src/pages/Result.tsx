@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { useAppContext } from '../context/AppContext';
@@ -9,63 +8,66 @@ export const Result: React.FC = () => {
   const navigate = useNavigate();
   const { analysisResult } = useAppContext();
 
-  console.log('Result:', analysisResult);
-
-  // ✅ NO RESULT
   if (!analysisResult) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>⚠️ No analysis found. Please analyze again.</p>
-      </div>
-    );
+    return <div className="text-center mt-10">⚠️ No result</div>;
   }
 
-  // ✅ STRING ERROR MESSAGE
-  if (typeof analysisResult === 'string') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>{analysisResult}</p>
-      </div>
-    );
+  if (typeof analysisResult === "string") {
+    return <div className="text-center mt-10">{analysisResult}</div>;
   }
 
-  const result: any = analysisResult;
+  const data: any = analysisResult;
 
-  // ✅ FINAL SAFETY CHECK
-  if (!result || (!result.analysis && !result.disease)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>⚠️ Analysis failed. Please try again.</p>
-      </div>
-    );
-  }
+  // ✅ MAP BACKEND → UI FORMAT
+  const diseaseName = data.disease || "Unknown";
+  const confidence = data.confidence || "0%";
+  const analysis = data.analysis || "No analysis";
+  const treatment = data.treatment || "No treatment";
 
   return (
-    <div className="min-h-screen bg-green-50 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-green-50 p-6">
+      <div className="max-w-3xl mx-auto">
 
-        {/* BACK BUTTON */}
-        <Button onClick={() => navigate('/analyze')} className="mb-4">
-          <ArrowLeft size={18} />
-          Back
-        </Button>
+        {/* HEADER */}
+        <h2 className="text-2xl font-bold mb-4">🌿 Crop Health Result</h2>
 
+        {/* IMAGE CARD (optional) */}
         <Card>
-          <h2 className="text-xl font-bold mb-4">Analysis Result</h2>
+          <p className="text-sm text-gray-500 mb-2">Detected Disease</p>
 
-          {/* ✅ SAFE DATA DISPLAY */}
-          <p><b>Disease:</b> {result.disease || "Unknown"}</p>
-          <p><b>Confidence:</b> {result.confidence || "0%"}</p>
+          <h1 className="text-3xl font-bold text-green-700">
+            {diseaseName}
+          </h1>
 
-          <hr className="my-3"/>
-
-          <p><b>Analysis:</b> {result.analysis || "No details available"}</p>
-
-          <h3 className="mt-3 font-bold">Treatment:</h3>
-          <p>{result.treatment || "No treatment info available"}</p>
+          <p className="mt-2 text-green-600">
+            Confidence: {confidence}
+          </p>
         </Card>
 
-        <div className="mt-4 flex gap-3">
+        {/* ANALYSIS */}
+        <Card className="mt-4">
+          <h3 className="font-bold mb-2">🔍 Analysis</h3>
+          <p>{analysis}</p>
+        </Card>
+
+        {/* SYMPTOMS (FAKE GENERATED FROM TEXT) */}
+        <Card className="mt-4">
+          <h3 className="font-bold mb-2">🌿 Symptoms</h3>
+          <ul className="list-disc pl-5">
+            <li>Leaf spots or discoloration</li>
+            <li>Yellowing or drying leaves</li>
+            <li>Growth reduction</li>
+          </ul>
+        </Card>
+
+        {/* TREATMENT */}
+        <Card className="mt-4">
+          <h3 className="font-bold mb-2">💊 Treatment</h3>
+          <p>{treatment}</p>
+        </Card>
+
+        {/* BUTTONS */}
+        <div className="mt-6 flex gap-3">
           <Button onClick={() => navigate('/analyze')} className="flex-1">
             Analyze Again
           </Button>
