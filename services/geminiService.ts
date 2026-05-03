@@ -8,7 +8,7 @@ import {
   checkBackendHealth 
 } from "./apiClient";
 
-// ✅ backend health check
+// ================= BACKEND CHECK =================
 checkBackendHealth().then((ok) => {
   if (ok) console.log("✅ Backend connected");
   else console.warn("⚠️ Backend not reachable");
@@ -20,16 +20,19 @@ export const getLiveContextData = async (
   locationInput: { lat: number; long: number } | string
 ): Promise<AppContextData | null> => {
   try {
-    console.log("📍 Fetching location data from backend...");
+    console.log("📍 Fetching location data...");
 
     const data = await getLocationDataViaBackend(locationInput);
+
+    // ✅ SAFE CHECK
+    if (!data) throw new Error("No data");
 
     return data as AppContextData;
 
   } catch (error) {
     console.error("❌ Location error:", error);
 
-    // ✅ fallback (important)
+    // ✅ fallback
     return {
       weather: {
         temp: 27,
@@ -64,7 +67,22 @@ export const analyzeCropHealth = async (
 
     console.log("✅ Backend response:", result);
 
-    return result;
+    // 🔥 VERY IMPORTANT FIX
+    if (!result || typeof result !== "object") {
+      throw new Error("Invalid backend response");
+    }
+
+    // 🔥 fallback if missing fields
+    if (!(result as any).analysis) {
+      return {
+        disease: (result as any)?.disease || "Unknown",
+        confidence: (result as any)?.confidence || "0%",
+        treatment: (result as any)?.treatment || "Try again",
+        analysis: "AI response incomplete"
+      };
+    }
+
+    return result as DiseaseResult;
 
   } catch (error: any) {
     console.error("❌ Analyze error:", error);
@@ -77,6 +95,10 @@ export const analyzeCropHealth = async (
 
     if (msg.includes("429")) {
       return "⚠️ Server busy. Try again later.";
+    }
+
+    if (msg.includes("Invalid")) {
+      return "⚠️ Server returned invalid data. Try again.";
     }
 
     return "❌ Analysis failed. Try again.";
@@ -100,6 +122,8 @@ export const sendMessageToGemini = async (
       language,
       contextData
     );
+
+    if (!res) throw new Error("Empty response");
 
     return res;
 

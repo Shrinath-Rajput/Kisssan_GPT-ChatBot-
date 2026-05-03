@@ -1,10 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Beaker, Leaf, ShieldCheck, Activity, ArrowLeft, ImageIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { useAppContext } from '../context/AppContext';
-import { DiseaseResult } from '../../types';
 
 export const Result: React.FC = () => {
   const navigate = useNavigate();
@@ -21,10 +20,8 @@ export const Result: React.FC = () => {
     );
   }
 
-  const isStringResult = typeof analysisResult === 'string';
-
-  // ✅ STRING RESPONSE (API ERROR / MESSAGE)
-  if (isStringResult) {
+  // ✅ STRING ERROR MESSAGE
+  if (typeof analysisResult === 'string') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>{analysisResult}</p>
@@ -32,10 +29,10 @@ export const Result: React.FC = () => {
     );
   }
 
-  const result = analysisResult as DiseaseResult;
+  const result: any = analysisResult;
 
-  // ✅ SAFETY CHECK (MAIN FIX)
-  if (!result || !result.diseaseName) {
+  // ✅ FINAL SAFETY CHECK
+  if (!result || (!result.analysis && !result.disease)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>⚠️ Analysis failed. Please try again.</p>
@@ -47,6 +44,7 @@ export const Result: React.FC = () => {
     <div className="min-h-screen bg-green-50 py-8">
       <div className="max-w-4xl mx-auto">
 
+        {/* BACK BUTTON */}
         <Button onClick={() => navigate('/analyze')} className="mb-4">
           <ArrowLeft size={18} />
           Back
@@ -55,23 +53,16 @@ export const Result: React.FC = () => {
         <Card>
           <h2 className="text-xl font-bold mb-4">Analysis Result</h2>
 
-          <p><b>Crop:</b> {result.crop}</p>
-          <p><b>Disease:</b> {result.diseaseName}</p>
-          <p><b>Confidence:</b> {result.confidence}%</p>
+          {/* ✅ SAFE DATA DISPLAY */}
+          <p><b>Disease:</b> {result.disease || "Unknown"}</p>
+          <p><b>Confidence:</b> {result.confidence || "0%"}</p>
 
           <hr className="my-3"/>
 
-          <p><b>Cause:</b> {result.cause}</p>
-
-          <h3 className="mt-3 font-bold">Symptoms:</h3>
-          <ul>
-            {result.symptoms?.map((s, i) => <li key={i}>• {s}</li>)}
-          </ul>
+          <p><b>Analysis:</b> {result.analysis || "No details available"}</p>
 
           <h3 className="mt-3 font-bold">Treatment:</h3>
-          <ul>
-            {result.treatmentPlan?.immediate?.map((t, i) => <li key={i}>⚡ {t}</li>)}
-          </ul>
+          <p>{result.treatment || "No treatment info available"}</p>
         </Card>
 
         <div className="mt-4 flex gap-3">
@@ -82,6 +73,7 @@ export const Result: React.FC = () => {
             Chat
           </Button>
         </div>
+
       </div>
     </div>
   );
