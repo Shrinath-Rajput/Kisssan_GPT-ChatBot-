@@ -1,79 +1,72 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Camera, X, Loader2 } from 'lucide-react';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { analyzeCropHealth } from '../../services/geminiService';
-import { useAppContext } from '../context/AppContext';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { analyzeCropHealth } from "../../services/geminiService";
+import { useAppContext } from "../context/AppContext";
 
 export const Analyze: React.FC = () => {
+  const [image, setImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { selectedLanguage, contextData } = useAppContext();
+  const { setAnalysisResult, contextData } = useAppContext();
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = (file: File) => {
+  const handleUpload = (e: any) => {
+    const file = e.target.files[0];
     const reader = new FileReader();
+
     reader.onloadend = () => {
-      setSelectedImage(reader.result as string);
+      setImage(reader.result as string);
     };
-    reader.readAsDataURL(file);
+
+    if (file) reader.readAsDataURL(file);
   };
 
   const handleAnalyze = async () => {
-    if (!selectedImage) {
-      setError("Upload image first");
-      return;
-    }
+    if (!image) return alert("Upload image first");
 
-    setIsAnalyzing(true);
-    setError(null);
+    setLoading(true);
 
-    try {
-      const result = await analyzeCropHealth(
-        selectedImage,
-        selectedLanguage,
-        contextData
-      );
+    const base64 = image.split(",")[1];
 
-      console.log("RESULT:", result);
+    const res = await analyzeCropHealth(base64, "English", contextData);
 
-      if (!result || typeof result === "string") {
-        setError("Analysis failed");
-        return;
-      }
+    setAnalysisResult(res);
+    setLoading(false);
 
-      // ✅ MAIN FIX
-      navigate("/result", { state: result });
-
-    } catch (err) {
-      setError("Server error");
-    } finally {
-      setIsAnalyzing(false);
-    }
+    navigate("/result");
   };
 
   return (
-    <div className="p-6">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => handleImageUpload(e.target.files![0])}
-      />
+    <div className="min-h-screen flex justify-center items-center bg-green-50">
+      <div className="bg-white p-6 rounded-xl shadow-xl w-[400px]">
 
-      {selectedImage && (
-        <img src={selectedImage} className="h-60 mt-4" />
-      )}
+        <h2 className="text-xl font-bold mb-4 text-center">
+          Crop Health Analyzer 🌿
+        </h2>
 
-      {error && <p className="text-red-500">{error}</p>}
+        {!image ? (
+          <label className="border-2 border-dashed p-6 block text-center cursor-pointer">
+            📷 Upload Image
+            <input type="file" onChange={handleUpload} hidden />
+          </label>
+        ) : (
+          <div>
+            <img src={image} className="rounded mb-3" />
+            <button
+              className="text-red-500"
+              onClick={() => setImage(null)}
+            >
+              Remove Image
+            </button>
+          </div>
+        )}
 
-      <button onClick={handleAnalyze} className="mt-4 bg-green-600 text-white p-2">
-        Analyze Crop
-      </button>
+        <button
+          onClick={handleAnalyze}
+          className="w-full bg-green-600 text-white p-2 mt-4 rounded"
+        >
+          {loading ? "Analyzing..." : "Analyze Crop"}
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { Language, AppContextData } from '../../types';
 
 interface AppContextType {
@@ -27,9 +27,36 @@ const DEFAULT_DATA: AppContextData = {
 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(Language.ENGLISH);
   const [contextData, setContextData] = useState<AppContextData>(DEFAULT_DATA);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  // ✅ LOCAL STORAGE FIX (MAIN BUG SOLVED)
+  const [analysisResult, setAnalysisResultState] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem("result");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // ✅ WRAPPER (IMPORTANT)
+  const setAnalysisResult = (result: any) => {
+    setAnalysisResultState(result);
+    try {
+      localStorage.setItem("result", JSON.stringify(result));
+    } catch (e) {
+      console.error("LocalStorage error:", e);
+    }
+  };
+
+  // ✅ AUTO SYNC (extra safety)
+  useEffect(() => {
+    if (analysisResult) {
+      localStorage.setItem("result", JSON.stringify(analysisResult));
+    }
+  }, [analysisResult]);
 
   return (
     <AppContext.Provider
