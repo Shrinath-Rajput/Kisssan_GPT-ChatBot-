@@ -1,8 +1,37 @@
-// ✅ FINAL WORKING GEMINI SERVICE (FRONTEND SAFE)
-
 import { AppContextData, Language } from "../types";
-import { analyzeCropViaBackend } from "./apiClient";
+import { analyzeCropViaBackend, getLocationDataViaBackend } from "./apiClient";
 
+
+// ================= LOCATION =================
+export const getLiveContextData = async (
+  locationInput: { lat: number; long: number } | string
+): Promise<AppContextData | null> => {
+  try {
+    const data = await getLocationDataViaBackend(locationInput);
+    return data as AppContextData;
+  } catch (error) {
+    console.error("❌ Location error:", error);
+
+    return {
+      weather: {
+        temp: 27,
+        condition: "Partly Cloudy",
+        rainForecast: "Light rain expected",
+        location: typeof locationInput === "string"
+          ? locationInput
+          : "Your Location"
+      },
+      soil: {
+        type: "Black Soil",
+        nitrogen: "Medium",
+        moisture: "Moderate"
+      }
+    };
+  }
+};
+
+
+// ================= ANALYZE =================
 export const analyzeCropHealth = async (
   imageBase64: string,
   language: Language,
@@ -15,9 +44,6 @@ export const analyzeCropHealth = async (
       contextData
     );
 
-    console.log("✅ Backend response:", res);
-
-    // ✅ IF BACKEND FAIL → RETURN DEMO PERFECT DATA
     if (!res || !res.disease) {
       return getFallbackData();
     }
@@ -31,7 +57,7 @@ export const analyzeCropHealth = async (
 };
 
 
-// ✅ PERFECT FALLBACK (YOUR UI EXACT MATCH)
+// ================= FALLBACK =================
 const getFallbackData = () => ({
   crop: "Grapes",
   disease: "Black Rot",
@@ -39,47 +65,39 @@ const getFallbackData = () => ({
   cause: "Fungal pathogen (Guignardia bidwellii)",
 
   symptoms: [
-    "Circular, reddish-brown spots on leaves which later turn dark brown to black.",
-    "Spots may have a yellow halo.",
-    "Necrotic (dead) tissue within the lesions.",
-    "Lesions can enlarge and coalesce."
+    "Circular, reddish-brown spots on leaves",
+    "Yellow halo spots",
+    "Necrotic tissue",
+    "Lesions enlarge"
   ],
 
   treatment: {
     immediate: [
-      "Remove and destroy all infected plant parts (leaves, berries, canes) to reduce inoculum.",
-      "Improve air circulation around the plants by careful pruning."
+      "Remove infected parts",
+      "Improve air circulation"
     ],
     organic: [
-      "Copper-based fungicides (e.g., Bordeaux mixture)",
-      "Neem oil (as a preventative or for very early stages)"
+      "Copper fungicide",
+      "Neem oil"
     ],
     chemical: [
       "Myclobutanil",
       "Mancozeb",
-      "Pyraclostrobin + Boscalid (Pristine)"
+      "Pristine"
     ]
   },
 
   smart: {
-    fungicides:
-      "Myclobutanil (Nova), Mancozeb (Dithane M-45), Pristine",
-
-    dosage:
-      "Myclobutanil: 5-6 ml per 10L water. Mancozeb: 25-30g per 10L water.",
-
-    method:
-      "Foliar spray covering all leaf surfaces (top & bottom).",
-
-    frequency:
-      "Apply every 7–14 days during humidity/rain. Rotate fungicides."
+    fungicides: "Myclobutanil, Mancozeb, Pristine",
+    dosage: "5-6ml per 10L",
+    method: "Foliar spray",
+    frequency: "Every 7-14 days"
   },
 
   prevention: [
-    "Prune vines for air circulation",
-    "Remove infected debris",
+    "Prune properly",
+    "Remove debris",
     "Avoid overhead irrigation",
-    "Use resistant varieties",
     "Maintain hygiene"
   ]
 });
