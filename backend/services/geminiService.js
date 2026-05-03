@@ -4,78 +4,28 @@ import { cacheManager } from '../utils/cache.js';
 import { getFallbackAnalysisResponse, getFallbackChatResponse } from '../utils/fallbackResponses.js';
 
 const SYSTEM_INSTRUCTION_BASE = `
-You are Kissan GPT, an AI specialist for Indian farmers, specifically focusing on Brinjal (Eggplant) and Grapes.
-Your job is to analyze images and text queries to provide expert agricultural advice RELATED ONLY TO THESE TWO CROPS.
+You are Kissan GPT, a farming expert for Brinjal and Grapes in India.
+You specialize in crop health, disease identification, and agricultural advice.
 
-🎯 CRITICAL INSTRUCTIONS
-1. ANSWER THE EXACT QUESTION THE USER ASKS - Be direct and specific
-2. If user asks "what is grapes" - give DETAILED info about grapes (characteristics, uses, climate, soil, water needs, diseases, etc.)
-3. If user asks "what is brinjal" - give DETAILED info about brinjal (characteristics, uses, climate, soil, water needs, diseases, etc.)
-4. If user asks "what is virat kohli" or any non-agricultural question - politely say "I only specialize in Brinjal and Grapes farming"
-5. NEVER give generic farming advice when user asks about a specific topic
-6. NEVER repeat the same answer for different questions
-
-🎯 CROP SPECIFICATIONS
-BRINJAL (Solanum melongena):
-- Uses: Vegetable crop for cooking, market sale, high nutritional value
-- Growing Season: 8-9 months from seed to harvest
-- Ideal Temperature: 20-30°C
-- Soil: Well-drained, fertile, pH 6.0-6.8
-- Water: Regular but avoid waterlogging
-- Spacing: 45cm x 60cm
-- Yield: 40-50 tonnes per hectare
-- Common Diseases: Leaf Spot, Damping Off, Powdery Mildew, Bacterial Wilt
-- Common Pests: Spider Mites, Shoot & Fruit Borer
-
-GRAPES (Vitis spp.):
-- Uses: Fresh consumption, raisins, juice, wine production
-- Growing: Perennial plant, productive for 50+ years
-- Ideal Temperature: 15-25°C
-- Soil: Well-drained, slightly acidic, pH 6.0-7.0
-- Water: Deep but infrequent watering
-- Spacing: 8-10 feet between vines
-- Yield: 20-40 tonnes per hectare
-- Common Diseases: Powdery Mildew, Black Rot, Downy Mildew, Anthracnose
-- Common Pests: Japanese Beetle, Spider Mites, Leafhoppers
-
-🎯 RESPONSE RULES
-1. Language: Match user's language selection (English, Hindi, Marathi)
-2. Format: Be concise, practical, and farmer-friendly
-3. Questions about grapes → ONLY grape information
-4. Questions about brinjal → ONLY brinjal information
-5. Questions about non-farm topics → Politely redirect
-6. Image analysis → Identify crop, disease, symptoms, treatment plan
-7. For chemicals → Always mention safe usage and dilution rates
-
-⚠️ DO NOT:
-- Give generic answers when specific crop is mentioned
-- Repeat cached responses
-- Give answers about crops other than Brinjal/Grapes
-- Use hardcoded responses - always generate fresh answers
-
-🎯 GENERATE DYNAMIC, FRESH ANSWERS
-Each conversation is unique. Generate new, contextual answers based on:
-- Weather data provided
-- Soil data provided  
-- User's specific question
-- Selected language
+Instructions:
+- Answer questions specifically about Brinjal (Eggplant) or Grapes
+- Provide practical, farmer-friendly advice
+- Be concise and direct
+- If asked about other crops, politely say you specialize in Brinjal and Grapes only
+- Generate FRESH, UNIQUE answers every time (no repeated responses)
+- Be specific to the question asked
 `;
 
 const getSystemInstruction = (language, contextData) => {
   const contextString = `
-  🌍 LIVE CONTEXT DATA FOR THIS CONVERSATION:
-  - Weather: ${contextData?.weather?.condition || 'N/A'}, ${contextData?.weather?.temp || 'N/A'}°C
-  - Rain Forecast: ${contextData?.weather?.rainForecast || 'N/A'}
-  - Location: ${contextData?.weather?.location || 'N/A'}
-  - Soil Type: ${contextData?.soil?.type || 'N/A'}
-  - Nitrogen Level: ${contextData?.soil?.nitrogen || 'N/A'}
-  - Soil Moisture: ${contextData?.soil?.moisture || 'N/A'}
-  - User Language: ${language || 'English'}
-  
-  ⚡ REMEMBER: Answer the user's EXACT question with specific, dynamic information. Do NOT use generic responses.
-  `;
+Location: ${contextData?.weather?.location || 'Unknown'}
+Weather: ${contextData?.weather?.condition || 'N/A'} - ${contextData?.weather?.temp || 'N/A'}°C
+Forecast: ${contextData?.weather?.rainForecast || 'N/A'}
+Soil: ${contextData?.soil?.type || 'N/A'}, Nitrogen: ${contextData?.soil?.nitrogen || 'N/A'}
+Language: ${language || 'English'}
+`;
 
-  return `${SYSTEM_INSTRUCTION_BASE}\n\n${contextString}`;
+  return `${SYSTEM_INSTRUCTION_BASE}\n${contextString}`;
 };
 
 const extractJSON = (text) => {
@@ -151,18 +101,34 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
   } catch (error) {
     console.error('❌ Chat Service Error:', error);
     
-    // ⚠️ NEVER use fallback for chat - always return fresh AI response
-    // If API fails, throw error so frontend knows about it
-    if (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error('⚠️ API quota exceeded. Please try again in a moment.');
+    // If API fails, generate dynamic fallback response
+    if (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+      console.warn('⚠️ API quota exceeded - Using dynamic fallback');
+      const fallback = getFallbackChatResponse(prompt, language);
+      return {
+        success: true,
+        message: fallback.message || fallback,
+        language: language || 'English',
+        fallback: true
+      };
     }
     
-    if (error.message.includes('API_KEY')) {
-      throw new Error('❌ BACKEND ERROR: GEMINI_API_KEY is not configured.');
+    if (error.message.includes('API_KEY') || error.message.includes('not configured')) {
+      return {
+        success: true,
+        message: `I'm currently helping farmers with Brinjal and Grapes farming advice. Please try again in a moment.`,
+        language: language || 'English',
+        fallback: true
+      };
     }
     
-    // Re-throw original error
-    throw error;
+    // For any other error, provide helpful fallback
+    return {
+      success: true,
+      message: `Temporarily unavailable. I specialize in Brinjal and Grapes farming. Your question is important!`,
+      language: language || 'English',
+      fallback: true
+    };
   }
 };
 

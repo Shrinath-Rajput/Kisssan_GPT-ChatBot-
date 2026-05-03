@@ -37,11 +37,10 @@ router.post('/', async (req, res) => {
     console.log(`📨 Chat request received: "${message.substring(0, 50)}..."`);
 
     // Call Gemini with retry logic
-    // Increase retries for rate limiting issues
     const response = await retryAsync(
       () => sendChatMessage(message, image, language, contextData),
-      4,  // max retries (increased for rate limiting)
-      2000 // initial delay (increased)
+      2,  // max retries
+      1000 // initial delay
     );
 
     console.log('✅ Chat response sent successfully');

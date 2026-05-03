@@ -98,38 +98,68 @@ export const getFallbackWeatherResponse = (location = 'Unknown') => {
 };
 
 export const getFallbackChatResponse = (message = '', language = 'English') => {
+  // Detect what the user is asking about
+  const msgLower = message.toLowerCase();
+  const isAboutGrapes = msgLower.includes('grape') || msgLower.includes('wine') || msgLower.includes('raisin');
+  const isAboutBrinjal = msgLower.includes('brinjal') || msgLower.includes('eggplant') || msgLower.includes('baingan') || msgLower.includes('वांग') || msgLower.includes('बैंगन');
+  
   const responses = {
-    English: [
-      'For brinjal, ensure regular watering but avoid waterlogging. Space plants 45cm apart for good air circulation.',
-      'Grapes need regular pruning to maintain shape and improve fruit quality. Prune during dormancy.',
-      'Always scout your fields regularly for early signs of diseases. Early detection saves crops!',
-      'Organic farming improves soil health. Rotate crops yearly and add compost regularly.',
-      'For maximum yield, ensure adequate sunlight (6-8 hours daily) and proper drainage.',
-      'Use certified disease-free seeds from authorized agricultural centers.',
-      'Monitor soil pH regularly. Most vegetables prefer slightly acidic soil (6.0-6.8 pH).',
-      'Integrated Pest Management (IPM) is the best approach - combine cultural, biological, and chemical methods.'
-    ],
-    Marathi: [
-      'वांग्यासाठी नियमित पाणी द्या पण जलभराव टाळा। पौधे ४५ सेमी अंतरावर लावा।',
-      'द्राक्षावेली नियमित प्रुनिंग करावी. सुप्तावस्थेत प्रुनिंग करावे.',
-      'नियमित शेत निरीक्षण करा - रोग लवकर आढळले तर नियंत्रण सोपे होते.',
-      'जैव शेती करा - प्रतिवर्ष पिकांचे चक्रीकरण करा आणि खाद मिळवा.'
-    ],
-    Hindi: [
-      'बैंगन के लिए नियमित पानी दें पर जलभराव से बचें। पौधे 45cm दूरी पर लगाएं।',
-      'अंगूरों को नियमित प्रूनिंग की जरूरत है। सर्दियों में प्रूनिंग करें।',
-      'खेत का नियमित निरीक्षण करें - शुरुआती चेतावनी बेहतर है।',
-      'जैविक खेती करें - हर साल फसलें घुमाएं और खाद डालें।'
-    ]
+    English: {
+      grapes: [
+        'Grapes are a perennial fruit crop that can produce for 50+ years. They need well-drained soil, regular pruning, and trellising for support. Ideal temperature is 15-25°C for best quality fruit.',
+        'For grapes, provide deep but infrequent watering. Space vines 8-10 feet apart. Common diseases include Powdery Mildew and Black Rot. Regular pruning during dormancy improves fruit quality.',
+        'Grapes can be used for fresh consumption, raisins, juice, or wine production. They require a full season (120-180 days) to mature. Harvest when sugar content reaches 18-20 Brix.',
+        'To prevent grape diseases like Powdery Mildew, ensure good air circulation through proper pruning. Use sulfur-based fungicides during dry seasons. Maintain proper canopy management.',
+        'Grapes need consistent mineral nutrition. Apply balanced fertilizers (NPK) and ensure adequate Boron, Zinc, and Magnesium for quality fruit development.'
+      ],
+      brinjal: [
+        'Brinjal (Eggplant) is a warm-season vegetable that thrives in 20-30°C temperature. It requires 8-9 months from seed to harvest. Space plants 45cm apart for good air circulation and yield of 40-50 tonnes/hectare.',
+        'For brinjal, ensure regular but measured watering to avoid waterlogging. Use well-drained fertile soil with good organic matter. Common pests include Spider Mites and Shoot & Fruit Borer.',
+        'Brinjal is rich in nutrients and widely used in cooking. It requires regular monitoring for diseases like Leaf Spot (Phomopsis Blight). Pick fruits when glossy dark purple for best market value.',
+        'To control brinjal diseases, remove infected plant parts immediately. Use Bordeaux mixture or neem oil as organic solutions. Chemical options include Mancozeb or Carbendazim with proper dilution.',
+        'Brinjal plants need good fertilization. Apply NPK (20:20:20) every 2 weeks along with micronutrients. Ensure 6-8 hours of daily sunlight for maximum yield.'
+      ],
+      general: [
+        'For any farming questions about Brinjal or Grapes, always scout your fields regularly for early signs of diseases. Early detection is crucial for crop management.',
+        'Organic farming improves soil health significantly. Practice crop rotation yearly and add compost regularly to maintain soil fertility.',
+        'Always use certified disease-free seeds from authorized agricultural centers for best results.',
+        'Integrated Pest Management (IPM) is the best approach - combine cultural, biological, and chemical methods for sustainable farming.',
+        'Monitor soil pH regularly. Most crops prefer pH between 6.0-7.0 for optimal nutrient uptake.'
+      ]
+    },
+    Marathi: {
+      grapes: [
+        'द्राक्ष हे बहुवर्षीय फसल आहे जी ५०+ वर्षे देते. त्याला चांगले ड्रेनेज असलेली मातीची गरज आहे, नियमित प्रुनिंग करावी लागते. आदर्श तापमान १५-२५°C आहे.',
+        'द्राक्षासाठी खोल पण कमी वारंवार पाणी द्या. वेलींमधील अंतर ८-१० फूट ठेवा. पावडरी मिल्ड्यू आणि ब्लॅक रॉट हे मुख्य रोग आहेत.'
+      ],
+      brinjal: [
+        'वांगी (बेनगन) हे उष्ण ऋतूचे भाजीपाला आहे जी २०-३०°C तापमानात उगतो. लागवड पासून कापणी पर्यंत ८-९ महिने लागतात. पौधे ४५ सेमी दूरावर लावा.',
+        'वांग्यासाठी नियमित पाणी द्या पण जलभराव टाळा. सड़े माटीला जैव पदार्थ मिळवा. पत्र्याचे डाग आणि शूट बोअर हे मुख्य कीटक आहेत.'
+      ]
+    },
+    Hindi: {
+      grapes: [
+        'अंगूर एक बहुवर्षीय फसल है जो 50+ साल तक पैदावार देता है। अच्छी जल निकासी वाली मिट्टी, नियमित प्रूनिंग जरूरी है। आदर्श तापमान 15-25°C है।',
+        'अंगूरों को गहरा पर कम बार पानी दें। बेलों के बीच 8-10 फीट की दूरी रखें। पाउडरी मिल्ड्यू और ब्लैक रॉट मुख्य रोग हैं।'
+      ],
+      brinjal: [
+        'बैंगन गर्म मौसम की सब्जी है जो 20-30°C तापमान में उगती है। बीज से कटाई तक 8-9 महीने लगते हैं। पौधे 45cm दूरी पर लगाएं।',
+        'बैंगन को नियमित पर नियंत्रित पानी दें। जलभराव से बचें। अच्छी नालियों वाली उपजाऊ मिट्टी उपयोग करें। पत्ती धब्बा मुख्य रोग है।'
+      ]
+    }
   };
 
   const langResponses = responses[language] || responses['English'];
-  const randomIndex = Math.floor(Math.random() * langResponses.length);
+  let selectedCategory = 'general';
   
-  return {
-    success: true,
-    message: langResponses[randomIndex],
-    language: language,
-    source: 'demo'
-  };
+  if (isAboutGrapes) {
+    selectedCategory = 'grapes';
+  } else if (isAboutBrinjal) {
+    selectedCategory = 'brinjal';
+  }
+
+  const categoryResponses = langResponses[selectedCategory] || langResponses['general'];
+  const randomIndex = Math.floor(Math.random() * categoryResponses.length);
+  
+  return categoryResponses[randomIndex];
 };
