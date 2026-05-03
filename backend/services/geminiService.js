@@ -72,12 +72,8 @@ const validateApiKey = () => {
 // Chat Service
 export const sendChatMessage = async (prompt, imageBase64, language, contextData) => {
   try {
-    // Check cache first
-    const cacheKey = { type: 'chat', prompt: prompt.substring(0, 100), language };
-    const cached = cacheManager.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
+    // ⚠️ NO CACHING for chat - users expect fresh responses every time
+    // Caching is disabled to ensure each question gets a unique answer
 
     const apiKey = validateApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -102,7 +98,7 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
         model.generateContent({
           contents: [{ role: 'user', parts: parts }],
           generationConfig: {
-            temperature: 0.4,
+            temperature: 0.5,
           },
           systemInstruction: systemInstruction,
         }),
@@ -116,8 +112,6 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
       language: language || 'English'
     };
 
-    // Cache the successful response
-    cacheManager.set(cacheKey, result);
     console.log(`✅ Chat message processed successfully in ${language || 'English'}`);
     return result;
   } catch (error) {
