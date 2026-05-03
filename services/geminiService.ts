@@ -1,121 +1,85 @@
-/**
- * Frontend Gemini Service (Updated to use Backend Proxy)
- * All API calls now go through the backend instead of directly to Gemini
- * This prevents 429 quota errors and improves security
- */
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-import { AppContextData, Language, DiseaseResult } from "../types";
-import { 
-  sendChatToBackend, 
-  analyzeCropViaBackend, 
-  getLocationDataViaBackend,
-  checkBackendHealth 
-} from "./apiClient";
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Check backend health on startup
-checkBackendHealth().then(isHealthy => {
-  if (isHealthy) {
-    console.log("✅ Backend server is healthy");
-  } else {
-    console.warn("⚠️ Backend server might not be available. Make sure it's running.");
-  }
-});
-
-export const getLiveContextData = async (
-  locationInput: { lat: number; long: number } | string
-): Promise<AppContextData | null> => {
+function extractJSON(text) {
   try {
-    console.log("📍 Fetching location data from backend...");
-    const data = await getLocationDataViaBackend(locationInput);
-    console.log("✅ Successfully fetched location data from backend:", data);
-    return data as AppContextData;
-  } catch (error) {
-    console.error("❌ Error fetching location data from backend:", error);
-    // Return default mock data on error
+    if (!text || typeof text !== "string") {
+      throw new Error("Empty response from Gemini");
+    }
+
+    const cleaned = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    if (start === -1 || end === -1) {
+      throw new Error("No JSON found");
+    }
+
+    const jsonString = cleaned.substring(start, end + 1);
+
+    return JSON.parse(jsonString);
+
+  } catch (err) {
+    console.log("⚠️ JSON parse failed, using fallback");
+
     return {
-      weather: {
-        temp: 27,
-        condition: "Partly Cloudy",
-        rainForecast: "Light rain expected",
-        location: typeof locationInput === 'string' ? locationInput : "Your Location"
-      },
-      soil: {
-        type: "Black Soil",
-        nitrogen: "Medium",
-        moisture: "Moderate"
-      }
+      disease: "Unknown",
+      confidence: "0%",
+      treatment: "Try uploading a clearer image",
+      analysis: "AI could not analyze properly"
     };
   }
-};
+}
 
-export const analyzeCropHealth = async (
-  imageBase64: string,
-  language: Language,
-  contextData: AppContextData
-): Promise<DiseaseResult | string> => {
+export const analyzeCropHealthService = async (imageBase64) => {
   try {
-    console.log("🔍 Sending image to backend for analysis...");
-    const result = await analyzeCropViaBackend(imageBase64, language, contextData);
-    console.log("✅ Analysis completed successfully via backend");
-    return result as DiseaseResult;
-  } catch (error) {
-    console.error("❌ Backend analysis error:", error);
-    const errorMsg = (error as any)?.message || String(error);
-    
-    // Backend connectivity error - provide clear fix instructions
-    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Network')) {
-      return `❌ Cannot connect to backend server\n\n🔧 FIX THIS:\n1. Go to Railway Dashboard (railway.app)\n2. Click your FRONTEND service\n3. Go to Variables tab\n4. Add: VITE_API_URL = https://your-backend-url.up.railway.app\n5. Copy backend URL from your BACKEND service in Railway\n6. Save and wait 2-3 minutes for redeploy\n\nFor development: Make sure backend is running with 'npm start' in backend/ folder`;
-    }
-    
-    if (errorMsg.includes('429')) {
-      return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Your request could not be processed. Please wait a few moments and try again.";
-    }
-    
-    if (errorMsg.includes('API_KEY') || errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('not configured')) {
-      return "❌ Backend Configuration Error\n\n🔧 TO FIX THIS:\n1. Get your Google Generative AI API Key from: https://aistudio.google.com/app/apikey\n2. Go to Railway Dashboard (railway.app)\n3. Click your BACKEND service\n4. Click Variables tab\n5. Add: GEMINI_API_KEY = (paste your API key)\n6. Save and wait 2-3 minutes for redeploy\n7. Try again";
-    }
-    
-    return `❌ Analysis failed: ${errorMsg}\n\nPlease check the browser console for details and try again.`;
-  }
-};
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash"
+    });
 
-export const sendMessageToGemini = async (
-  prompt: string,
-  imageBase64: string | undefined,
-  language: Language,
-  contextData: AppContextData
-): Promise<string> => {
-  try {
-    console.log("💬 Sending message to backend...");
-    const response = await sendChatToBackend(
+    const prompt = `
+    Analyze this crop image and return STRICT JSON format:
+
+    {
+      "disease": "",
+      "confidence": "",
+      "treatment": "",
+      "analysis": ""
+    }
+    `;
+
+    const result = await model.generateContent([
       prompt,
-      imageBase64,
-      language,
-      contextData
-    );
-    console.log("✅ Chat response received from backend");
-    return response;
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: imageBase64,
+        },
+      },
+    ]);
+
+    // ✅ SAFE ACCESS
+    const text =
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    const parsed = extractJSON(text);
+
+    return parsed;
+
   } catch (error) {
-    console.error("❌ Backend chat error:", error);
-    const errorMsg = (error as any)?.message || String(error);
-    
-    // Backend connectivity error - provide clear fix instructions
-    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Network')) {
-      return `❌ Cannot connect to backend server\n\n🔧 FIX THIS:\n1. Go to Railway Dashboard (railway.app)\n2. Click your FRONTEND service\n3. Go to Variables tab\n4. Add: VITE_API_URL = https://your-backend-url.up.railway.app\n5. Copy backend URL from your BACKEND service in Railway\n6. Save and wait 2-3 minutes for redeploy\n\nFor development: Make sure backend is running with 'npm start' in backend/ folder`;
-    }
-    
-    if (errorMsg.includes('429')) {
-      return "⚠️ Server busy - API quota exceeded. Please try again later.\n\nKissan GPT is currently experiencing high traffic. Please wait a few moments and try again.";
-    }
-    
-    if (errorMsg.includes('API_KEY') || errorMsg.includes('API Key') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('not configured')) {
-      return "❌ Backend Configuration Error\n\n🔧 TO FIX THIS:\n1. Get your Google Generative AI API Key from: https://aistudio.google.com/app/apikey\n2. Go to Railway Dashboard (railway.app)\n3. Click your BACKEND service\n4. Click Variables tab\n5. Add: GEMINI_API_KEY = (paste your API key)\n6. Save and wait 2-3 minutes for redeploy\n7. Try again";
-    }
-    
-    if (errorMsg.includes('timeout')) {
-      return "⏱️ Request took too long. Please try again.";
-    }
-    
-    return `❌ Error: ${errorMsg}\n\nPlease try again or check the browser console for details.`;
+    console.error("❌ Gemini Error:", error);
+
+    // ✅ ALWAYS RETURN (IMPORTANT)
+    return {
+      disease: "Unknown",
+      confidence: "0%",
+      treatment: "Server busy, try again",
+      analysis: "Fallback response"
+    };
   }
 };

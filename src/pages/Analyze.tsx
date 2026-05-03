@@ -44,7 +44,7 @@ export const Analyze: React.FC = () => {
     if (file) handleImageUpload(file);
   };
 
-  // 🔍 MAIN ANALYZE FUNCTION (FIXED)
+  // 🔥 MAIN FIXED ANALYZE FUNCTION
   const handleAnalyze = async () => {
     if (!selectedImage) {
       setError("⚠️ Please upload an image first");
@@ -63,18 +63,21 @@ export const Analyze: React.FC = () => {
 
       console.log("API RESULT:", result);
 
-      // ✅ MAIN FIX (IMPORTANT)
-      if (!result) {
-        setError("❌ Analysis failed. Please try again.");
+      // ✅ IMPORTANT FIX (handle string error + null)
+      if (!result || typeof result === "string") {
+        setError(
+          typeof result === "string"
+            ? result
+            : "❌ Analysis failed. Please try again."
+        );
         return;
       }
 
+      // ✅ Safe result set
       setAnalysisResult(result);
 
-      // small delay for smooth UI
-      setTimeout(() => {
-        navigate('/result');
-      }, 300);
+      // ✅ navigate only when valid data
+      navigate('/result');
 
     } catch (err: any) {
       console.error("Analyze Error:", err);
@@ -148,7 +151,7 @@ export const Analyze: React.FC = () => {
 
           {/* ERROR MESSAGE */}
           {error && (
-            <div className="mt-4 text-red-600 text-sm">
+            <div className="mt-4 text-red-600 text-sm whitespace-pre-line">
               {error}
             </div>
           )}
