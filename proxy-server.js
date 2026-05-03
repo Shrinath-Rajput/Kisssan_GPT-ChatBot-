@@ -71,6 +71,27 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Proxy server listening on port ${PORT}`);
   console.log(`📡 Frontend: http://0.0.0.0:${PORT}`);
   console.log(`🔀 API requests will be proxied to ${BACKEND_URL}`);
+  console.log(`🌍 Environment: NODE_ENV=${process.env.NODE_ENV}`);
+  console.log(`📦 Version: Node ${process.version}`);
+}).on('error', (err) => {
+  console.error('❌ Server error:', err);
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled rejection:', reason);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM received, gracefully shutting down');
+  process.exit(0);
 });
 
 export default app;
