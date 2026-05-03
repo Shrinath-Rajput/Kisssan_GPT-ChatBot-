@@ -24,8 +24,8 @@ export async function sendChatToBackend(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        prompt,
-        imageBase64,
+        message: prompt,
+        image: imageBase64,
         language,
         contextData,
       }),
@@ -39,6 +39,7 @@ export async function sendChatToBackend(
       data?.reply ||
       data?.message ||
       data?.data?.message ||
+      data?.data ||
       "⚠️ No response"
     );
   } catch (err) {
