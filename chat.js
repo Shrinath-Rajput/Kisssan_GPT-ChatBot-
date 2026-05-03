@@ -6,13 +6,26 @@ router.post("/", async (req, res) => {
   try {
     const { message } = req.body;
 
+    // 🔒 Basic validation
     if (!message) {
-      return res.json({ reply: "Message missing" });
+      return res.json({
+        success: false,
+        reply: "Message is required"
+      });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // ✅ UPDATED MODEL (IMPORTANT)
+    // ❌ API key missing
+    if (!apiKey) {
+      console.error("❌ GEMINI_API_KEY missing");
+      return res.json({
+        success: false,
+        reply: "API key not configured"
+      });
+    }
+
+    // 🔥 Gemini API call
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -30,30 +43,43 @@ router.post("/", async (req, res) => {
       }
     );
 
-    const data = await response.json();
+    // ❌ API error handling
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("❌ Gemini API ERROR:", errText);
 
-    console.log("🔥 GEMINI FULL:", JSON.stringify(data, null, 2));
-
-    // ✅ SAFE PARSING
-    let reply = "No response from AI";
-
-    if (data?.candidates?.length > 0) {
-      reply =
-        data.candidates[0]?.content?.parts?.[0]?.text ||
-        "No response text";
+      return res.json({
+        success: false,
+        reply: "Gemini API failed"
+      });
     }
 
-    res.json({
+    const data = await response.json();
+
+    console.log("🔥 GEMINI RESPONSE:", JSON.stringify(data, null, 2));
+
+    // ✅ Safe response extract
+    let reply = "No response from AI";
+
+    if (
+      data?.candidates &&
+      data.candidates.length > 0 &&
+      data.candidates[0]?.content?.parts?.length > 0
+    ) {
+      reply = data.candidates[0].content.parts[0].text;
+    }
+
+    return res.json({
       success: true,
-      reply,
+      reply
     });
 
   } catch (error) {
     console.error("❌ CHAT ERROR:", error);
 
-    res.json({
+    return res.json({
       success: false,
-      reply: "Server error",
+      reply: "Server error"
     });
   }
 });
