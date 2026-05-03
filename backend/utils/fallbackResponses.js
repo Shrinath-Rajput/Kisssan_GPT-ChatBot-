@@ -101,69 +101,6 @@ export const getFallbackChatResponse = (message = '', language = 'English') => {
   // Detect what the user is asking about
   const msgLower = message.toLowerCase();
   const isAboutGrapes = msgLower.includes('grape') || msgLower.includes('wine') || msgLower.includes('raisin') || msgLower.includes('vitis');
-  const isAboutBrinjal = msgLower.includes('brinjal') || msgLower.includes('eggplant') || msgLower.includes('baingan') || msgLower.includes('वांग') || msgLower.includes('बैंगन') || msgLower.includes('वांगी') || msgLower.includes('solanum');
-  
-  const responses = {
-    English: {
-      grapes: [
-        'Grapes are a perennial fruit crop that can produce for 50+ years. They need well-drained soil, regular pruning, and trellising for support. Ideal temperature is 15-25°C for best quality fruit. They can be used for fresh consumption, raisins, juice, or wine production.',
-        'For grape cultivation, provide deep but infrequent watering. Space vines 8-10 feet apart for proper air circulation. The growing season is 120-180 days. Common diseases include Powdery Mildew, Black Rot, and Downy Mildew which can be controlled with proper fungicide application.',
-        'Grapes require consistent mineral nutrition throughout the growing season. Apply balanced fertilizers (NPK) and ensure adequate Boron, Zinc, and Magnesium for quality fruit development. Harvest when sugar content reaches 18-20 Brix for optimal flavor.',
-        'To prevent grape diseases like Powdery Mildew, ensure good air circulation through proper pruning. Use sulfur-based fungicides during dry seasons (every 7-14 days). Maintain proper canopy management to allow sunlight penetration and reduce humidity.',
-        'Grapes can yield 20-40 tonnes per hectare. Prune during dormancy to maintain vine shape. Remove diseased leaves immediately. Use certified disease-free vines from authorized nurseries. Monitor for Japanese Beetles and Spider Mites as common pests.',
-        'Grape vines need support structures (trellises or stakes). They require 6-8 hours of direct sunlight daily. Soil pH should be 6.0-7.0. Drip irrigation is better than overhead watering to reduce disease pressure and save water.'
-      ],
-      brinjal: [
-        'Brinjal (Eggplant - Solanum melongena) is a warm-season vegetable that thrives in 20-30°C temperature. It requires 8-9 months from seed to harvest. Space plants 45cm x 60cm apart for good air circulation. Expected yield is 40-50 tonnes per hectare with proper management.',
-        'For brinjal cultivation, ensure regular but measured watering to avoid waterlogging which causes root rot. Use well-drained fertile soil with good organic matter (5-10 tonnes compost/hectare). Common pests include Spider Mites, Shoot & Fruit Borer, and Lace Bugs.',
-        'Brinjal is rich in vitamins, minerals, and antioxidants. It is widely used in cooking and has high market value. Pick fruits when they are glossy dark purple for best market price. Each plant can produce 15-25 fruits under good management.',
-        'To control brinjal diseases like Leaf Spot (Phomopsis Blight), remove infected plant parts immediately and destroy them. Use Bordeaux mixture (1%) or neem oil (5%) as organic solutions. Chemical options include Mancozeb (0.2%) or Carbendazim (0.05%) with proper dilution ratios.',
-        'Brinjal plants need good fertilization schedule. Apply NPK (20:20:20) every 2 weeks along with micronutrients (Zn, B, Mg). Ensure 6-8 hours of daily sunlight for maximum yield. Remove lower leaves for better air circulation and disease prevention.',
-        'Start brinjal from seeds indoors 8-10 weeks before transplanting. Transplant seedlings when they have 4-6 true leaves. Support plants with stakes or strings as they grow. Scout regularly for early signs of diseases like Damping Off in nursery and Powdery Mildew in field.'
-      ],
-      general: [
-        'For both Brinjal and Grapes farming, the key to success is regular field scouting. Check plants 2-3 times per week for early signs of diseases, pests, or nutrient deficiencies. Early detection allows for timely intervention and better crop protection.',
-        'Organic farming improves soil health significantly over time. Practice crop rotation yearly, add 5-10 tonnes of compost per hectare, and use green manuring. This reduces pest and disease buildup naturally.',
-        'Always use certified disease-free seeds and planting materials from authorized agricultural centers. This is the first and most important step in crop management to avoid introducing diseases into your fields.',
-        'Integrated Pest Management (IPM) is the best sustainable approach. Combine cultural methods (pruning, sanitation), biological controls (beneficial insects), and chemical methods (when necessary) only as last resort.',
-        'Monitor soil pH regularly. Most crops perform best at pH 6.0-7.0. Test soil annually and amend with lime or sulfur as needed. Proper pH ensures optimal nutrient availability and uptake by plants.',
-        'Water management is critical. Provide 25-30mm water per week for Brinjal and deep but infrequent watering for Grapes. Use drip irrigation to save water and reduce disease pressure. Avoid overhead watering in evenings.'
-      ]
-    },
-    Marathi: {
-      grapes: [
-        'द्राक्ष हे बहुवर्षीय फसल आहे जी ५०+ वर्षे देते. त्याला चांगले ड्रेनेज असलेली मातीची गरज आहे, नियमित प्रुनिंग करावी लागते. आदर्श तापमान १५-२५°C आहे. ताजे फल, किसमिस, रस किंवा वाइन बनवण्यासाठी वापरले जाते.',
-        'द्राक्षासाठी खोल पण कमी वारंवार पाणी द्या. वेलींमधील अंतर ८-१० फूट ठेवा. पावडरी मिल्ड्यू आणि ब्लॅक रॉट हे मुख्य रोग आहेत. सल्फर आधारित फंजिसाइड वापरा.',
-        'द्राक्षावेली नियमित निरीक्षण करा. रोग लक्षण दिसले तर लगेच उपचार करा. सुप्तावस्थेत शाखा छेदन (प्रुनिंग) करावे. रोग मुक्त वेली लागवड करा.',
-        'द्राक्षाला संतुलित खते (NPK) आणि सूक्ष्म पोषक द्रव्य (जस्त, बोरॉन) लागतात. २०-४० टन उत्पादन हेक्टरी मिळते. बोरॉक्स मिश्रण साल्फरसह फंजिसाइड वापरा.'
-      ],
-      brinjal: [
-        'वांगी (बेनगन) हे उष्ण ऋतूचे भाजीपाला आहे जी २०-३०°C तापमानात उगतो. लागवड पासून कापणी पर्यंत ८-९ महिने लागतात. पौधे ४५x६० सेमी दूरावर लावा. ४०-५० टन उत्पादन मिळते.',
-        'वांग्यासाठी नियमित पाणी द्या पण जलभराव टाळा. सड़े माटीला जैव पदार्थ मिळवा. पत्र्याचे डाग, शूट बोअर हे मुख्य कीटक आहेत. बॉर्डो मिश्रण वापरा.',
-        'वांगी पोषकांनी समृद्ध आहे. फल गडद जांभळ्या रंगाचे झाल्यावर तोडा. प्रत्येक रोप १५-२५ फल देते. मल्चिंग करून आर्द्रता राखा.',
-        'वांग्याला NPK (२०:२०:२०) खते हर २ आठवड्यांअंतराने द्या. सूक्ष्म पोषक द्रव्य मिळवा. ६-८ तास सूर्यप्रकाश लागतो. निचली पाने काढा.'
-      ]
-    },
-    Hindi: {
-      grapes: [
-        'अंगूर एक बहुवर्षीय फसल है जो 50+ साल तक पैदावार देता है। अच्छी जल निकासी वाली मिट्टी, नियमित प्रूनिंग जरूरी है। आदर्श तापमान 15-25°C है। ताजे फल, किसमिस, जूस या वाइन बनाने में उपयोग होता है।',
-        'अंगूरों को गहरा पर कम बार पानी दें। बेलों के बीच 8-10 फीट की दूरी रखें। पाउडरी मिल्ड्यू और ब्लैक रॉट मुख्य रोग हैं। सल्फर आधारित कवकनाशी का उपयोग करें।',
-        'अंगूर की बेलों का नियमित निरीक्षण करें। रोग के लक्षण दिखें तो तुरंत इलाज करें। सर्दियों में प्रूनिंग करें। रोग-मुक्त बेलें लगाएं।',
-        'अंगूरों को संतुलित खाद (NPK) और सूक्ष्म पोषक तत्व (जस्ता, बोरॉन) चाहिए। 20-40 टन प्रति हेक्टेयर पैदावार मिलती है। ड्रिप सिंचाई बेहतर है।'
-      ],
-      brinjal: [
-        'बैंगन गर्म मौसम की सब्जी है जो 20-30°C तापमान में उगती है। बीज से कटाई तक 8-9 महीने लगते हैं। पौधे 45x60 सेमी दूरी पर लगाएं। 40-50 टन प्रति हेक्टेयर उत्पादन मिलता है।',
-        'बैंगन को नियमित पर नियंत्रित पानी दें। जलभराव से बचें। उपजाऊ मिट्टी में जैव पदार्थ मिलाएं। पत्ती धब्बा और शूट बोअर मुख्य कीटक हैं।',
-        'बैंगन विटामिन और खनिजों से भरपूर है। फल गहरे बैंगनी रंग के होने पर तोड़ें। प्रत्येक पौधा 15-25 फल दे सकता है। मल्चिंग करके नमी बनाए रखें।',
-        'बैंगन को NPK (20:20:20) खाद हर 2 हफ्ते दें। सूक्ष्म पोषक तत्व जोड़ें। 6-8 घंटे धूप चाहिए। निचली पत्तियां हटाएं।'
-      ]
-    }
-  };
-
-export const getFallbackChatResponse = (message = '', language = 'English') => {
-  // Detect what the user is asking about
-  const msgLower = message.toLowerCase();
-  const isAboutGrapes = msgLower.includes('grape') || msgLower.includes('wine') || msgLower.includes('raisin') || msgLower.includes('vitis');
   const isAboutBrinjal = msgLower.includes('brinjal') || msgLower.includes('eggplant') || msgLower.includes('baingan') || msgLower.includes('वांग') || msgLower.includes('बैंगन') || msgLower.includes('solanum');
   
   // Detect question type
