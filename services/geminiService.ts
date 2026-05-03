@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// ✅ SAFETY CHECK
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ GEMINI_API_KEY missing in environment variables");
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// ✅ SAFE JSON PARSER
 function extractJSON(text) {
   try {
     if (!text || typeof text !== "string") {
@@ -20,18 +26,17 @@ function extractJSON(text) {
       throw new Error("No JSON found");
     }
 
-    const jsonString = cleaned.substring(start, end + 1);
-
-    return JSON.parse(jsonString);
+    return JSON.parse(cleaned.substring(start, end + 1));
 
   } catch (err) {
-    console.log("⚠️ JSON parse failed, using fallback");
+    console.log("⚠️ JSON parse failed:", err.message);
 
+    // ✅ ALWAYS SAFE RETURN
     return {
       disease: "Unknown",
       confidence: "0%",
-      treatment: "Try uploading a clearer image",
-      analysis: "AI could not analyze properly"
+      treatment: "Upload clearer image",
+      analysis: "AI response parsing failed"
     };
   }
 }
@@ -42,16 +47,24 @@ export const analyzeCropHealthService = async (imageBase64) => {
       model: "gemini-1.5-flash"
     });
 
+    // ✅ STRICT PROMPT (VERY IMPORTANT 🔥)
     const prompt = `
-    Analyze this crop image and return STRICT JSON format:
+You are an agriculture expert AI.
 
-    {
-      "disease": "",
-      "confidence": "",
-      "treatment": "",
-      "analysis": ""
-    }
-    `;
+Analyze the crop image and return ONLY valid JSON.
+
+Do NOT add explanation.
+Do NOT add markdown.
+
+Return format:
+
+{
+  "disease": "string",
+  "confidence": "string",
+  "treatment": "string",
+  "analysis": "string"
+}
+`;
 
     const result = await model.generateContent([
       prompt,
@@ -63,23 +76,28 @@ export const analyzeCropHealthService = async (imageBase64) => {
       },
     ]);
 
-    // ✅ SAFE ACCESS
+    // ✅ ULTRA SAFE ACCESS
     const text =
-      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    const parsed = extractJSON(text);
+    console.log("🧠 Gemini raw response:", text);
 
-    return parsed;
+    // ❌ EMPTY RESPONSE HANDLE
+    if (!text) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    return extractJSON(text);
 
   } catch (error) {
-    console.error("❌ Gemini Error:", error);
+    console.error("❌ Gemini Error:", error.message);
 
-    // ✅ ALWAYS RETURN (IMPORTANT)
+    // ✅ FINAL FALLBACK (NEVER BREAK FRONTEND)
     return {
       disease: "Unknown",
       confidence: "0%",
       treatment: "Server busy, try again",
-      analysis: "Fallback response"
+      analysis: "AI service unavailable"
     };
   }
 };
