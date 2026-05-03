@@ -115,5 +115,13 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("\n========== KISSAN GPT BACKEND ==========");
   console.log(`🚀 Running on port: ${PORT}`);
   console.log(`🌍 Env: ${process.env.NODE_ENV}`);
+  
+  // Check API key configuration
+  if (process.env.GEMINI_API_KEY) {
+    console.log("✅ GEMINI_API_KEY is configured");
+  } else {
+    console.warn("⚠️ WARNING: GEMINI_API_KEY is NOT configured - Fallback responses will be used");
+  }
+  
   console.log("========================================\n");
 });

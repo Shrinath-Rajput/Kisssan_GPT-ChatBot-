@@ -5,23 +5,36 @@ import { getFallbackAnalysisResponse, getFallbackChatResponse } from '../utils/f
 
 const SYSTEM_INSTRUCTION_BASE = `
 You are Kissan GPT, a farming expert for Brinjal and Grapes in India.
-You specialize in crop health, disease identification, and agricultural advice.
 
-Instructions:
-- Answer questions specifically about Brinjal (Eggplant) or Grapes
-- Provide practical, farmer-friendly advice
-- Be concise and direct
-- If asked about other crops, politely say you specialize in Brinjal and Grapes only
-- Generate FRESH, UNIQUE answers every time (no repeated responses)
-- Be specific to the question asked
+CRITICAL RULES:
+1. Answer EXACTLY what the user asks - be specific and direct
+2. If user asks "what is grapes" - describe grapes (not general farming tips)
+3. If user asks "what is brinjal" - describe brinjal (not general farming tips)
+4. If user asks "disease of grapes" - list and describe grape diseases ONLY
+5. Every answer must be UNIQUE and DIFFERENT from previous answers
+6. Generate FRESH content every time - do NOT repeat
+7. Be detailed, practical, and farmer-friendly
+8. If question is NOT about Brinjal or Grapes, politely redirect to your area of expertise
+9. QUALITY OVER QUANTITY - Better to give one accurate answer than three vague ones
+10. Always provide actionable, tested farming advice
+
+EXAMPLES:
+Q: "what is grapes"
+A: "Grapes (Vitis spp.) are perennial fruit-bearing vines that grow for 50+ years. They produce clusters of berries used for fresh consumption, juice, wine, and raisins..."
+
+Q: "what is brinjal"
+A: "Brinjal, scientifically known as Solanum melongena, is a warm-season vegetable from the Solanaceae family. It's commonly called Eggplant in English..."
+
+Q: "disease of grapes"
+A: "Grapes are susceptible to several fungal diseases: 1) Powdery Mildew - white powder coating on leaves, 2) Black Rot - circular spots with concentric rings, 3) Downy Mildew - yellow patches..."
+
+KEY: ANSWER THE QUESTION ASKED - not general farming advice unless asked.
 `;
 
 const getSystemInstruction = (language, contextData) => {
   const contextString = `
 Location: ${contextData?.weather?.location || 'Unknown'}
 Weather: ${contextData?.weather?.condition || 'N/A'} - ${contextData?.weather?.temp || 'N/A'}°C
-Forecast: ${contextData?.weather?.rainForecast || 'N/A'}
-Soil: ${contextData?.soil?.type || 'N/A'}, Nitrogen: ${contextData?.soil?.nitrogen || 'N/A'}
 Language: ${language || 'English'}
 `;
 
@@ -75,15 +88,14 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
     parts.push({ text: prompt });
 
     const response = await geminiRequestQueue.execute(async () => {
-      // Randomize temperature for more varied responses
-      const temperatures = [0.6, 0.7, 0.8, 0.9];
-      const randomTemp = temperatures[Math.floor(Math.random() * temperatures.length)];
+      // Use consistent temperature for more reliable answers
+      const consistentTemp = 0.7;
       
       return await Promise.race([
         model.generateContent({
           contents: [{ role: 'user', parts: parts }],
           generationConfig: {
-            temperature: randomTemp,
+            temperature: consistentTemp,
             maxOutputTokens: 1024,
             topP: 0.95,
             topK: 50,
@@ -103,33 +115,40 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
     console.log(`✅ Chat message processed successfully in ${language || 'English'}`);
     return result;
   } catch (error) {
-    console.error('❌ Chat Service Error:', error);
+    console.error('❌ Chat Service Error:', error.message || error);
     
-    // If API fails, generate dynamic fallback response
+    // Check if API key is configured
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn('⚠️ GEMINI_API_KEY is not configured - Using smart fallback response');
+    }
+    
+    // If API fails, generate smart fallback response
     if (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
-      console.warn('⚠️ API quota exceeded - Using dynamic fallback');
+      console.warn('⚠️ API quota exceeded - Using fallback');
       const fallback = getFallbackChatResponse(prompt, language);
       return {
         success: true,
-        message: fallback.message || fallback,
+        message: fallback,
         language: language || 'English',
         fallback: true
       };
     }
     
-    if (error.message.includes('API_KEY') || error.message.includes('not configured')) {
+    if (error.message.includes('API_KEY') || error.message.includes('not configured') || !process.env.GEMINI_API_KEY) {
+      const fallback = getFallbackChatResponse(prompt, language);
       return {
         success: true,
-        message: `I'm currently helping farmers with Brinjal and Grapes farming advice. Please try again in a moment.`,
+        message: fallback,
         language: language || 'English',
         fallback: true
       };
     }
     
     // For any other error, provide helpful fallback
+    const fallback = getFallbackChatResponse(prompt, language);
     return {
       success: true,
-      message: `Temporarily unavailable. I specialize in Brinjal and Grapes farming. Your question is important!`,
+      message: fallback,
       language: language || 'English',
       fallback: true
     };
