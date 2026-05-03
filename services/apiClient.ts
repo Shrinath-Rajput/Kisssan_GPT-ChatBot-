@@ -41,11 +41,24 @@ export async function sendChatToBackend(
 
     console.log("🔥 CHAT RESPONSE:", data);
 
-    // ✅ ONLY use reply (backend standard)
+    // ✅ Backend wraps in formatResponse: { success, data: {...}, error, timestamp }
+    // sendChatMessage returns { success, message, language }
+    if (data?.data?.message && typeof data.data.message === "string") {
+      return data.data.message;
+    }
+
+    // Fallback for other response formats
+    if (data?.data?.reply && typeof data.data.reply === "string") {
+      return data.data.reply;
+    }
     if (data?.reply && typeof data.reply === "string") {
       return data.reply;
     }
+    if (data?.message && typeof data.message === "string") {
+      return data.message;
+    }
 
+    console.warn("⚠️ Unexpected response structure:", data);
     return "⚠️ No response from AI";
 
   } catch (err) {
