@@ -3,19 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, Camera, X, Loader2 } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
-import { Loader } from '../../components/Loader';
 import { analyzeCropHealth } from '../../services/geminiService';
 import { useAppContext } from '../context/AppContext';
 
 export const Analyze: React.FC = () => {
   const navigate = useNavigate();
   const { selectedLanguage, contextData, setAnalysisResult } = useAppContext();
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 📸 Upload Image
   const handleImageUpload = (file: File) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -23,37 +25,64 @@ export const Analyze: React.FC = () => {
         setSelectedImage(reader.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setError("❌ Please upload a valid image file");
     }
   };
 
+  // 📂 File select
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
+    if (file) handleImageUpload(file);
   };
 
+  // 🖱️ Drag drop
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
+    if (file) handleImageUpload(file);
   };
 
+  // 🔍 MAIN ANALYZE FUNCTION (FIXED)
   const handleAnalyze = async () => {
-    if (!selectedImage) return;
+    if (!selectedImage) {
+      setError("⚠️ Please upload an image first");
+      return;
+    }
 
     setIsAnalyzing(true);
     setError(null);
+
     try {
-      const result = await analyzeCropHealth(selectedImage, selectedLanguage, contextData);
+      const result = await analyzeCropHealth(
+        selectedImage,
+        selectedLanguage,
+        contextData
+      );
+
+      console.log("API RESULT:", result);
+
+      // ✅ MAIN FIX (IMPORTANT)
+      if (!result) {
+        setError("❌ Analysis failed. Please try again.");
+        return;
+      }
+
       setAnalysisResult(result);
-      setTimeout(() => navigate('/result'), 500);
-    } catch (error) {
-      console.error('Analysis error:', error);
-      setError('An unexpected error occurred. Please try again.');
+
+      // small delay for smooth UI
+      setTimeout(() => {
+        navigate('/result');
+      }, 300);
+
+    } catch (err: any) {
+      console.error("Analyze Error:", err);
+
+      setError(
+        err?.message ||
+        "❌ Server error. Please try again later."
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -61,188 +90,89 @@ export const Analyze: React.FC = () => {
 
   const clearImage = () => {
     setSelectedImage(null);
+    setError(null);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-stone-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-stone-900 mb-2">Crop Health Analysis</h1>
-          <p className="text-stone-600">Upload a clear photo of your Brinjal or Grape plant</p>
-        </div>
+      <div className="max-w-4xl mx-auto px-4">
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <h1 className="text-3xl font-bold mb-6">Crop Health Analysis</h1>
+
+        <Card className="p-6">
+
           {/* Upload Area */}
-          <div>
-            <Card className="h-full">
-              {!selectedImage ? (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
-                  className={`flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-2xl transition-all ${
-                    isDragging
-                      ? 'border-emerald-500 bg-emerald-50'
-                      : 'border-stone-200 bg-stone-50 hover:border-emerald-400'
-                  }`}
-                >
-                  <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
-                    <Upload size={32} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-stone-800 mb-2">
-                    Drag & drop your image
-                  </h3>
-                  <p className="text-stone-500 text-center mb-6 px-4">
-                    Or click the button below to browse
-                  </p>
-                  <div className="flex flex-col gap-3 w-full px-4">
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full"
-                    >
-                      <Camera size={20} />
-                      Choose Photo
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <p className="text-xs text-stone-500 text-center">
-                      JPG, PNG, or WebP • Max 10MB
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative mb-4 w-full">
-                    <img
-                      src={selectedImage}
-                      alt="Preview"
-                      className="w-full h-auto max-h-96 object-cover rounded-xl border-2 border-emerald-500"
-                      referrerPolicy="no-referrer"
-                    />
-                    <button
-                      onClick={clearImage}
-                      className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-lg hover:bg-red-600 transition-colors"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <p className="text-sm text-stone-600 mb-4">Image ready for analysis</p>
-                  <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Change Image
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </div>
-
-          {/* Instructions & CTA */}
-          <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
-              <h3 className="font-bold text-lg text-stone-900 mb-4 flex items-center gap-2">
-                📸 Photography Tips
-              </h3>
-              <ul className="space-y-3 text-sm text-stone-700">
-                <li className="flex gap-2">
-                  <span className="text-emerald-600">✓</span>
-                  <span>Clear, well-lit photo of the affected area</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emerald-600">✓</span>
-                  <span>Close-up of leaves or stems showing symptoms</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emerald-600">✓</span>
-                  <span>Avoid blur and shadows</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emerald-600">✓</span>
-                  <span>Show multiple angles if possible</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emerald-600">✓</span>
-                  <span>Include healthy and affected parts</span>
-                </li>
-              </ul>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-              <h3 className="font-bold text-lg text-stone-900 mb-4 flex items-center gap-2">
-                🎯 What We Detect
-              </h3>
-              <ul className="space-y-2 text-sm text-stone-700">
-                <li className="flex gap-2">
-                  <span className="text-blue-600">🥒</span>
-                  <span><strong>Brinjal:</strong> Leaf Spot, Bacterial Wilt, etc.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-blue-600">🍇</span>
-                  <span><strong>Grapes:</strong> Powdery Mildew, Downy Mildew, etc.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-blue-600">📊</span>
-                  <span>Disease confidence and severity</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-blue-600">💊</span>
-                  <span>Organic & Chemical treatments</span>
-                </li>
-              </ul>
-            </Card>
-
-            {/* Error Message Display */}
-            {error && (
-              <Card className="bg-red-50 border-red-200">
-                <p className="text-sm text-red-900 whitespace-pre-wrap">{error}</p>
-              </Card>
-            )}
-
-            {/* Analyze Button */}
-            <Button
-              onClick={handleAnalyze}
-              disabled={!selectedImage || isAnalyzing}
-              size="lg"
-              className="w-full"
+          {!selectedImage ? (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed p-10 text-center rounded-lg ${
+                isDragging ? "border-green-500 bg-green-50" : "border-gray-300"
+              }`}
             >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Camera size={20} />
-                  Analyze Crop Health
-                </>
-              )}
-            </Button>
+              <Upload className="mx-auto mb-4" size={40} />
 
-            {/* Current Location */}
-            <Card className="bg-stone-100">
-              <p className="text-xs text-stone-600 uppercase font-semibold mb-2">
-                📍 Analysis Context
-              </p>
-              <p className="text-sm font-medium text-stone-800">
-                {contextData.weather.location}
-              </p>
-              <p className="text-xs text-stone-600 mt-1">
-                Temp: {contextData.weather.temp}°C | Condition: {contextData.weather.condition}
-              </p>
-            </Card>
-          </div>
-        </div>
+              <p className="mb-4">Drag & Drop Image or</p>
+
+              <Button onClick={() => fileInputRef.current?.click()}>
+                <Camera size={18} />
+                Choose Image
+              </Button>
+
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+          ) : (
+            <div className="text-center">
+              <img
+                src={selectedImage}
+                className="max-h-80 mx-auto rounded-lg mb-4"
+                alt="preview"
+              />
+
+              <Button onClick={clearImage} variant="outline">
+                <X size={18} />
+                Remove Image
+              </Button>
+            </div>
+          )}
+
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="mt-4 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* ANALYZE BUTTON */}
+          <Button
+            onClick={handleAnalyze}
+            disabled={!selectedImage || isAnalyzing}
+            className="w-full mt-6"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="animate-spin mr-2" size={18} />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Camera size={18} />
+                Analyze Crop
+              </>
+            )}
+          </Button>
+
+        </Card>
       </div>
     </div>
   );
