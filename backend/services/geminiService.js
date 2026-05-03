@@ -75,14 +75,18 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
     parts.push({ text: prompt });
 
     const response = await geminiRequestQueue.execute(async () => {
+      // Randomize temperature for more varied responses
+      const temperatures = [0.6, 0.7, 0.8, 0.9];
+      const randomTemp = temperatures[Math.floor(Math.random() * temperatures.length)];
+      
       return await Promise.race([
         model.generateContent({
           contents: [{ role: 'user', parts: parts }],
           generationConfig: {
-            temperature: 0.7,
+            temperature: randomTemp,
             maxOutputTokens: 1024,
-            topP: 0.9,
-            topK: 40,
+            topP: 0.95,
+            topK: 50,
           },
           systemInstruction: systemInstruction,
         }),
