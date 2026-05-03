@@ -1,80 +1,116 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { useAppContext } from '../context/AppContext';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 export const Result: React.FC = () => {
   const navigate = useNavigate();
   const { analysisResult } = useAppContext();
 
   if (!analysisResult) {
-    return <div className="text-center mt-10">⚠️ No result</div>;
+    return <div className="p-10 text-center">No result found</div>;
   }
 
-  if (typeof analysisResult === "string") {
-    return <div className="text-center mt-10">{analysisResult}</div>;
-  }
-
-  const data: any = analysisResult;
-
-  // ✅ MAP BACKEND → UI FORMAT
-  const diseaseName = data.disease || "Unknown";
-  const confidence = data.confidence || "0%";
-  const analysis = data.analysis || "No analysis";
-  const treatment = data.treatment || "No treatment";
+  const r = analysisResult;
 
   return (
     <div className="min-h-screen bg-green-50 p-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
 
         {/* HEADER */}
-        <h2 className="text-2xl font-bold mb-4">🌿 Crop Health Result</h2>
+        <h1 className="text-2xl font-bold">🌿 Crop Health Result</h1>
 
-        {/* IMAGE CARD (optional) */}
-        <Card>
-          <p className="text-sm text-gray-500 mb-2">Detected Disease</p>
-
-          <h1 className="text-3xl font-bold text-green-700">
-            {diseaseName}
-          </h1>
-
-          <p className="mt-2 text-green-600">
-            Confidence: {confidence}
+        {/* DISEASE */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <p className="text-sm text-gray-500">Detected Disease</p>
+          <h2 className="text-2xl font-bold text-green-700">
+            {r.disease}
+          </h2>
+          <p className="text-green-600 font-semibold">
+            Confidence: {r.confidence}
           </p>
-        </Card>
+        </div>
 
-        {/* ANALYSIS */}
-        <Card className="mt-4">
-          <h3 className="font-bold mb-2">🔍 Analysis</h3>
-          <p>{analysis}</p>
-        </Card>
+        {/* CAUSE */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <p><b>Cause:</b> {r.cause}</p>
+        </div>
 
-        {/* SYMPTOMS (FAKE GENERATED FROM TEXT) */}
-        <Card className="mt-4">
-          <h3 className="font-bold mb-2">🌿 Symptoms</h3>
-          <ul className="list-disc pl-5">
-            <li>Leaf spots or discoloration</li>
-            <li>Yellowing or drying leaves</li>
-            <li>Growth reduction</li>
+        {/* SYMPTOMS */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <h3 className="font-bold mb-2">🌿 Symptoms Identified</h3>
+          <ul className="list-disc ml-6">
+            {r.symptoms?.map((s: string, i: number) => (
+              <li key={i}>{s}</li>
+            ))}
           </ul>
-        </Card>
+        </div>
 
         {/* TREATMENT */}
-        <Card className="mt-4">
-          <h3 className="font-bold mb-2">💊 Treatment</h3>
-          <p>{treatment}</p>
-        </Card>
+        <div className="bg-white p-5 rounded-xl shadow space-y-3">
 
-        {/* BUTTONS */}
-        <div className="mt-6 flex gap-3">
-          <Button onClick={() => navigate('/analyze')} className="flex-1">
-            Analyze Again
-          </Button>
-          <Button onClick={() => navigate('/chat')} className="flex-1">
-            Chat
-          </Button>
+          <h3 className="font-bold">🧪 Treatment Plan</h3>
+
+          <div>
+            <h4 className="font-semibold text-blue-600">
+              Immediate Action
+            </h4>
+            <ul className="ml-6 list-disc">
+              {r.treatment?.immediate?.map((t: string, i: number) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-green-600">
+              Organic Solution
+            </h4>
+            <ul className="ml-6 list-disc">
+              {r.treatment?.organic?.map((t: string, i: number) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-orange-600">
+              Chemical Treatment
+            </h4>
+            <ul className="ml-6 list-disc">
+              {r.treatment?.chemical?.map((t: string, i: number) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
         </div>
+
+        {/* SMART */}
+        <div className="bg-black text-green-400 p-5 rounded-xl">
+          <h3 className="font-bold mb-2">⚡ Smart Recommendations</h3>
+
+          <p><b>Fungicides:</b> {r.smart?.fungicides}</p>
+          <p><b>Dosage:</b> {r.smart?.dosage}</p>
+          <p><b>Method:</b> {r.smart?.method}</p>
+          <p><b>Frequency:</b> {r.smart?.frequency}</p>
+        </div>
+
+        {/* PREVENTION */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <h3 className="font-bold">🛡 Prevention Tips</h3>
+          <ul className="list-disc ml-6">
+            {r.prevention?.map((p: string, i: number) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* BUTTON */}
+        <button
+          onClick={() => navigate("/analyze")}
+          className="w-full bg-green-600 text-white py-3 rounded-xl"
+        >
+          Analyze Another Photo
+        </button>
 
       </div>
     </div>
