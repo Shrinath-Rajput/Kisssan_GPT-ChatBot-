@@ -21,9 +21,10 @@ export const getLiveContextData = async (
         temp: 27,
         condition: "Partly Cloudy",
         rainForecast: "Light rain expected",
-        location: typeof locationInput === "string"
-          ? locationInput
-          : "Your Location"
+        location:
+          typeof locationInput === "string"
+            ? locationInput
+            : "Your Location"
       },
       soil: {
         type: "Black Soil",
@@ -48,11 +49,25 @@ export const analyzeCropHealth = async (
       contextData
     );
 
-    if (!res || !res.disease) {
-      return getFallbackData();
-    }
+    console.log("✅ Backend analyze response:", res);
 
-    return res;
+    // ✅ IMPORTANT FIX (normalize response)
+    if (!res) return getFallbackData();
+
+    return {
+      crop: res.crop || "Grapes",
+      diseaseName: res.disease || "Unknown",
+      confidence: parseInt(res.confidence) || 85,
+      cause: res.cause || "AI response incomplete",
+      symptoms: res.symptoms || [],
+      treatmentPlan: {
+        immediate: res.treatment?.immediate || [],
+        organic: res.treatment?.organic || [],
+        chemical: res.treatment?.chemical || []
+      },
+      smart: res.smart || {},
+      prevention: res.prevention || []
+    };
 
   } catch (error) {
     console.error("❌ Analyze error:", error);
@@ -69,8 +84,13 @@ export const sendMessageToGemini = async (
   contextData: AppContextData
 ): Promise<string> => {
   try {
+    console.log("💬 Sending to backend:", prompt);
+
     const res = await sendChatToBackend(
-      prompt,
+      `You are an agriculture expert for Grapes & Brinjal.
+Give practical farmer advice.
+
+Question: ${prompt}`,
       imageBase64,
       language,
       contextData
@@ -99,8 +119,8 @@ export const sendMessageToGemini = async (
 // ================= FALLBACK =================
 const getFallbackData = () => ({
   crop: "Grapes",
-  disease: "Black Rot",
-  confidence: "90%",
+  diseaseName: "Black Rot",
+  confidence: 90,
   cause: "Fungal pathogen (Guignardia bidwellii)",
 
   symptoms: [
@@ -110,13 +130,13 @@ const getFallbackData = () => ({
     "Spots enlarge"
   ],
 
-  treatment: {
+  treatmentPlan: {
     immediate: [
-      "Remove infected parts",
+      "Remove infected plant parts",
       "Improve air circulation"
     ],
     organic: [
-      "Copper fungicide",
+      "Copper fungicide (Bordeaux mixture)",
       "Neem oil"
     ],
     chemical: [
@@ -128,14 +148,14 @@ const getFallbackData = () => ({
 
   smart: {
     fungicides: "Myclobutanil, Mancozeb, Pristine",
-    dosage: "5-6ml per 10L",
+    dosage: "5-6 ml per 10L water",
     method: "Foliar spray",
     frequency: "7-14 days"
   },
 
   prevention: [
-    "Prune plants",
-    "Remove debris",
+    "Prune vines",
+    "Remove fallen leaves",
     "Avoid overhead watering",
     "Maintain hygiene"
   ]
