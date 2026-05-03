@@ -5,14 +5,20 @@ const router = express.Router();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// ================= CHAT =================
 router.post("/", async (req, res) => {
   try {
     const { prompt } = req.body;
 
+    console.log("📥 Prompt:", prompt);
+
     if (!prompt) {
-      return res.status(400).json({
-        reply: "❌ Prompt missing",
+      return res.json({ reply: "❌ Prompt missing" });
+    }
+
+    // 🔥 SAFE FALLBACK (जर API key issue असेल)
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({
+        reply: "⚠️ Gemini API key not set. Showing demo response.",
       });
     }
 
@@ -23,20 +29,21 @@ router.post("/", async (req, res) => {
     const result = await model.generateContent(prompt);
 
     const text =
-      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response";
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    console.log("✅ Gemini Reply:", text);
+    console.log("🤖 Gemini:", text);
 
-    res.json({
-      reply: text,
+    return res.json({
+      reply:
+        text ||
+        "⚠️ AI did not return response. Try again.",
     });
 
-  } catch (error) {
-    console.error("❌ Chat Error:", error);
+  } catch (err) {
+    console.error("❌ ERROR:", err);
 
-    res.status(500).json({
-      reply: "❌ AI failed",
+    return res.json({
+      reply: "❌ Chat service error",
     });
   }
 });
