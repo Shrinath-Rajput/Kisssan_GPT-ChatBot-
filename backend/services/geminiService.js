@@ -31,14 +31,44 @@ A: "Grapes are susceptible to several fungal diseases: 1) Powdery Mildew - white
 KEY: ANSWER THE QUESTION ASKED - not general farming advice unless asked.
 `;
 
+const getLanguageInstruction = (language) => {
+  const languageInstructions = {
+    'Marathi': `
+LANGUAGE INSTRUCTION: YOU MUST RESPOND ENTIRELY IN MARATHI.
+- All text must be in Devanagari script (मराठी)
+- Use simple, farm-friendly Marathi language
+- Include practical farming terminology in Marathi
+- Example: वांगी = Brinjal, द्राक्ष = Grapes, पत्र्याचे डाग = Leaf Spot, फंजिसाइड = Fungicide
+- IMPORTANT: Do not mix languages - respond ONLY in Marathi
+    `,
+    'Hindi': `
+LANGUAGE INSTRUCTION: YOU MUST RESPOND ENTIRELY IN HINDI.
+- All text must be in Devanagari script (हिंदी)
+- Use simple, farm-friendly Hindi language
+- Include practical farming terminology in Hindi
+- Example: बैंगन = Brinjal, अंगूर = Grapes, पत्ती धब्बा = Leaf Spot, कवकनाशी = Fungicide
+- IMPORTANT: Do not mix languages - respond ONLY in Hindi
+    `,
+    'English': `
+LANGUAGE INSTRUCTION: Respond in clear, simple English.
+- Use English with practical farming terminology
+- Keep language simple and farmer-friendly
+- Make sure any technical terms are explained
+    `
+  };
+
+  return languageInstructions[language] || languageInstructions['English'];
+};
+
 const getSystemInstruction = (language, contextData) => {
   const contextString = `
 Location: ${contextData?.weather?.location || 'Unknown'}
 Weather: ${contextData?.weather?.condition || 'N/A'} - ${contextData?.weather?.temp || 'N/A'}°C
-Language: ${language || 'English'}
 `;
+  
+  const languageInstruction = getLanguageInstruction(language);
 
-  return `${SYSTEM_INSTRUCTION_BASE}\n${contextString}`;
+  return `${SYSTEM_INSTRUCTION_BASE}\n${contextString}\n${languageInstruction}`;
 };
 
 const extractJSON = (text) => {

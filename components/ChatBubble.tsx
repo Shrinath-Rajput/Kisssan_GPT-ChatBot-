@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChatMessage } from '../types';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useAppContext } from '../context/AppContext';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -9,6 +10,56 @@ interface ChatBubbleProps {
 
 export const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
   const isUser = message.role === 'user';
+  const { selectedLanguage } = useAppContext();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const handleSpeak = () => {
+    // Only speak bot messages
+    if (isUser) return;
+
+    // Stop if already speaking
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    setIsSpeaking(true);
+
+    // Remove markdown formatting for speech
+    const plainText = message.text
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/###\s/g, '')
+      .replace(/##\s/g, '')
+      .replace(/#\s/g, '')
+      .replace(/`/g, '')
+      .replace(/\n/g, ' ');
+
+    const utterance = new SpeechSynthesisUtterance(plainText);
+
+    // Set language based on selected language
+    const languageMap: { [key: string]: string } = {
+      'English': 'en-US',
+      'Marathi': 'mr-IN',
+      'Hindi': 'hi-IN'
+    };
+
+    utterance.lang = languageMap[selectedLanguage] || 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   return (
     <div className={`flex w-full mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -35,6 +86,22 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
           <div className="prose prose-sm max-w-none prose-stone dark:prose-invert prose-p:leading-relaxed prose-pre:bg-stone-800 prose-pre:text-stone-100">
             <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>
+          
+          {/* Speak Button for Bot Messages */}
+          {!isUser && (
+            <button
+              onClick={handleSpeak}
+              className={`mt-3 flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                isSpeaking
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
+              }`}
+              title={selectedLanguage === 'Marathi' ? 'बोला' : selectedLanguage === 'Hindi' ? 'बोलें' : 'Speak'}
+            >
+              <Volume2 size={14} />
+              {isSpeaking ? 'Stop' : 'Speak'}
+            </button>
+          )}
         </div>
       </div>
     </div>
