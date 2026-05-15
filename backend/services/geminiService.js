@@ -136,9 +136,19 @@ export const sendChatMessage = async (prompt, imageBase64, language, contextData
       ]);
     });
 
+    // Extract text from response - handle both response.text and response.candidates structure
+    let responseText = null;
+    if (typeof response.text === 'function') {
+      responseText = response.text();
+    } else if (response.text) {
+      responseText = response.text;
+    } else if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
+      responseText = response.candidates[0].content.parts[0].text;
+    }
+
     const result = {
       success: true,
-      message: response.text || 'I could not generate a response.',
+      message: responseText || 'I could not generate a response.',
       language: language || 'English'
     };
 
@@ -228,9 +238,19 @@ export const analyzeCropHealthService = async (imageBase64, language, contextDat
       ]);
     });
 
+    // Extract text from response - handle both response.text and response.candidates structure
+    let responseText = null;
+    if (typeof response.text === 'function') {
+      responseText = response.text();
+    } else if (response.text) {
+      responseText = response.text;
+    } else if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
+      responseText = response.candidates[0].content.parts[0].text;
+    }
+
     const result = {
       success: true,
-      analysis: extractJSON(response.text),
+      analysis: extractJSON(responseText),
       language: language || 'English'
     };
 
@@ -261,16 +281,19 @@ export const analyzeCropHealthService = async (imageBase64, language, contextDat
 export const getLocationContextData = async (locationInput) => {
   try {
     const apiKey = validateApiKey();
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     let locationPrompt = typeof locationInput === 'string' 
       ? `Location: "${locationInput}"` 
       : `Lat: ${locationInput.lat}, Long: ${locationInput.long}`;
     
     const response = await Promise.race([
-      ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `${locationPrompt}
+      model.generateContent({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `${locationPrompt}
         Find typical weather and soil data for this location:
         1. Location name (Village/City, District)
         2. Typical temperature and weather patterns
@@ -278,15 +301,27 @@ export const getLocationContextData = async (locationInput) => {
         4. Typical soil type for region
 
         Return ONLY valid JSON (no markdown):
-        {"weather": {"temp": 28, "condition": "Partly Cloudy", "rainForecast": "Light rain expected", "location": "City, District"}, "soil": {"type": "Black Soil", "nitrogen": "Medium", "moisture": "Moderate"}}`,
-        config: {
+        {"weather": {"temp": 28, "condition": "Partly Cloudy", "rainForecast": "Light rain expected", "location": "City, District"}, "soil": {"type": "Black Soil", "nitrogen": "Medium", "moisture": "Moderate"}}`
+          }]
+        }],
+        generationConfig: {
           temperature: 0.3
         }
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
     ]);
 
-    const data = extractJSON(response.text);
+    // Extract text from response
+    let responseText = null;
+    if (typeof response.text === 'function') {
+      responseText = response.text();
+    } else if (response.text) {
+      responseText = response.text;
+    } else if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
+      responseText = response.candidates[0].content.parts[0].text;
+    }
+
+    const data = extractJSON(responseText);
     console.log('✅ Location data fetched successfully');
     return {
       success: true,
