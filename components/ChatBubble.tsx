@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChatMessage } from '../types';
 import { User, Bot, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../src/context/AppContext';
 
 interface ChatBubbleProps {
   message: ChatMessage;
